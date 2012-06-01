@@ -18,6 +18,7 @@ def div_(x, y = 1):
 def tanh_(*args):
     inp = sum(args)
     return tanh(inp)
+
 def tan_(*args):
     inp = sum(args)
     return tanh(inp)
