@@ -1,4 +1,4 @@
-from math import log,exp,tanh,sqrt
+from math import log,exp,tan,tanh,sqrt,cos,sin,cosh,sinh
 import operator
 
 #### MATH ###
@@ -16,6 +16,21 @@ def div_(x, y = 1):
     return x / y
 
 def tanh_(*args):
+    inp = sum(args)
+    return tanh(inp)
+def tan_(*args):
+    inp = sum(args)
+    return tanh(inp)
+def sin_(*args):
+    inp = sum(args)
+    return tanh(inp)
+def cos_(*args):
+    inp = sum(args)
+    return tanh(inp)
+def sinh_(*args):
+    inp = sum(args)
+    return tanh(inp)
+def cosh_(*args):
     inp = sum(args)
     return tanh(inp)
 

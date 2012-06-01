@@ -56,7 +56,7 @@ class EvoDevoWorkbench:
 		config = ConfigParser.ConfigParser()
 		config.readfp(open(configfname))
 		
-		logging.config.fileConfig(config.get('default','logconf'),disable_existing_loggers=False)
+		logging.config.fileConfig(config.get('default','logconf'))
     		log.info('Starting evolution...')
 		self.evolog.critical(evologhead)
 
