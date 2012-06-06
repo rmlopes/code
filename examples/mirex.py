@@ -12,25 +12,25 @@ import numpy
 numclasses = 5
 allclasses = nparray([int(c) 
                       for c in open('datafiles/MIREXclasses.txt').readlines()])
-allfeatures =nparray([map(lambda t: float(t), l.split(',')) 
-                      for l in open('datafiles/FMnorm.txt').readlines()])
+#allfeatures =nparray([map(lambda t: float(t), l.split(',')) 
+#                      for l in open('datafiles/FMnorm.txt').readlines()])
 
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-projected = numpy.load('datafiles/projectedfeat.npy')
+projected = numpy.load('datafiles/projectedfeat-04.npy')
 myitercount = 0
 zipped = zip(allclasses, projected)
 workingset = sample(zipped,int(0.3*len(zipped)))
 
 class MIREX(ReNCoDeProb):
-    extrafuns = ['exp_','log_','tanh_','sqrt_']
+    extrafuns = ['exp_','min','max','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
     def __init__(self, evaluate):
         self.labels = None
         ReNCoDeProb.__init__(self,evaluate)
         self.terms.extend(["inputs[%i]"%i 
                            for i in range(1,len(zipped[0][1]))])
         self.funs.extend(self.extrafuns)
-        self.arity.update(zip(self.extrafuns,[1]*len(self.extrafuns)))
+        self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
     
 def nnlikefun(mapped, node_inputs, inputs):
 	if not node_inputs:

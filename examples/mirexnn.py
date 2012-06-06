@@ -20,6 +20,7 @@ allfeatures =nparray([map(lambda t: float(t), l.split(','))
 projected = numpy.load('datafiles/projectedfeat.npy')
 myitercount = 0
 zipped = zip(allclasses, projected)
+#TODO shulffle zipped to split into train/test
 workingset = sample(zipped,int(0.7*len(zipped)))
 
 class MIREX_NN(ReNCoDeProb):
@@ -57,7 +58,7 @@ def sigmoid(inputs,weights):
     return 1.0 / (1.0 + exp(-numpy.dot(inputs, weights)))
 
 
-def evaluate(circuit, topology = (16,10,5), test = False):
+def evaluate(circuit, topology = (19,10,5), test = False):
     if len(circuit) < 4:
         return 1e4
     #numinputs = [not c[2] for c in circuit[-5:]].count(1)
@@ -106,7 +107,6 @@ def evaluate(circuit, topology = (16,10,5), test = False):
     
     results = []
     for c,feats in workingset:
-        
         resultv = nn(feats,w1,w2)
         resultz = zip(range(1,6),resultv[1])
         #print resultz
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
     edw.run()
     
-    testresult = evaluate(edw.best.circuit,test=True)
+    testresult = evaluate(edw.best.phenotype,test=True)
     print 'Generalization: '
     print testresult
 

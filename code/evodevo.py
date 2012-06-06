@@ -86,7 +86,7 @@ class EvoDevoWorkbench:
 		mutrate = config.getfloat('default','mutrate')
 		self.mutate_ = partial(bitflipmutation,
 				       mutrate = mutrate)
-		self.itercount = 1
+		self.itercount = 0
 		
 	def step(self):
 		log.info('Mapping population to circuit...')

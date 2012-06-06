@@ -17,5 +17,10 @@ allfeatures =nparray([map(lambda t: float(t), l.split(','))
                       for l in open('datafiles/FMnorm.txt').readlines()])
 
 pcafeats = mlab.PCA(allfeatures)
-projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-numpy.save('datafiles/projectedfeat', projected)
+
+#print pcafeats.fracs
+#print pcafeats.Y[0,:]
+
+projected = pcafeats.project(allfeatures,0.03)
+print projected[:1]
+numpy.save('datafiles/projectedfeat-03', projected)
