@@ -22,6 +22,18 @@ class ReNCoDeProb(Problem):
 		Problem.__init__(self, evaluate, defaultnodemap, 
 				 printdotcircuit)
 
+
+class ClassifProb(ReNCoDeProb):
+    extrafuns = ['exp_','min','max','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
+    def __init__(self, evaluate, numfeat):
+        self.labels = None
+        ReNCoDeProb.__init__(self,evaluate)
+        self.terms.extend(["inputs[%i]"%i 
+                           for i in range(1,numfeat)])
+        self.funs.extend(self.extrafuns)
+        self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
+
+
 ### Agent model to use with this CoDe module
 class ReNCoDeAgent(Agent):
 	genotype = None
@@ -58,6 +70,17 @@ def mergefun(mapped, node_inputs, inputs):
 		result += reduce(lambda m, n: m + ',' + n, node_inputs)
 	result += ')'
 	return result
+
+def nnlikefun(mapped, node_inputs, inputs):
+	if not node_inputs:
+            return eval(mapped)
+	mainmod = __import__('__main__')
+	if len(node_inputs) == 1:
+            return getattr(mainmod, mapped)(node_inputs[0])
+        if mapped in MIREX.extrafuns:
+            return getattr(mainmod, mapped)(node_inputs)
+        return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
+                      node_inputs)
 	
 def defaultnodemap(signature, mappingset):
 	if len(mappingset) < 2:

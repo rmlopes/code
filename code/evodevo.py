@@ -58,7 +58,7 @@ class EvoDevoWorkbench:
 		config.readfp(open(configfname))
 		
 		logging.config.fileConfig(config.get('default','logconf'))
-    		log.info('Starting evolution...')
+    		log.info('Setting up evolutionary workbench...')
 		self.evolog.critical(evologhead)
 
 		self.problem = problem
@@ -67,7 +67,6 @@ class EvoDevoWorkbench:
 		self.parentpsize = config.getint('default','parentpopsize')
 		self.maxiters = config.getint('default','numiters')
 		self.popratio = self.popsize / self.parentpsize
-		self.numevals = 0
 		
 		opnames = config.get('default','operators')
 		oprates = config.get('default','oprates')
@@ -79,21 +78,22 @@ class EvoDevoWorkbench:
 		self.arnconfig = ConfigParser.ConfigParser()
 		self.arnconfig.readfp(open(arncfg))
 		self.agentclass = partial(agentclass, config = self.arnconfig)
-		log.info('Initializing population...')
-		self.population = [self.agentclass() 
-				   for p in range(self.popsize)]
-		self.best = self.agentclass()
-		self.parents = []
 		mutrate = config.getfloat('default','mutrate')
 		self.mutate_ = partial(bitflipmutation,
 				       mutrate = mutrate)
-		self.itercount = 0
+		
 		self.localsearch = config.get('default','localsearch')
 		if self.localsearch:
 			log.info('Initializing local search holder')
 			mainmod = __import__('__main__')
 			self.localsearch = getattr(mainmod, 
 						   self.localsearch)(5,codefun)
+
+		self.numevals = None
+		self.population = None
+		self.parents = None
+		self.best = None
+		self.itercount = None
 		
 	def step(self):
 		log.info('Mapping population to circuit...')
@@ -108,7 +108,8 @@ class EvoDevoWorkbench:
 		if self.localsearch:
 			log.info('Performing local search...')
 			for i in self.population:
-				self.localsearch.search(i,self.problem)
+				self.numevals += self.localsearch.search(
+					i,self.problem)
 		
 		log.info('Selecting parents...')
 		#there is a bug in functools.partial in Py2.6
@@ -129,7 +130,15 @@ class EvoDevoWorkbench:
 				   for i in range(self.popratio)]
 		
 	def run(self, terminate = (lambda x,y: x <= 1e-3 or y <= 0)):
-		start = clock()
+		start = clock()		
+		self.numevals = 0
+		self.itercount = 0
+		log.info('Initializing population...')
+		self.population = [self.agentclass() 
+				   for p in range(self.popsize)]
+		self.best = self.agentclass()
+		self.parents = []
+		
 		while(not(terminate(self.best.fitness,
 				    self.maxiters-self.itercount))):
 			log.info('--- Iteration #%i ---', self.itercount)
@@ -137,8 +146,8 @@ class EvoDevoWorkbench:
 			log.debug(self.parents[0].fitness)
 			log.debug(self.best.fitness)
 			if self.parents[0].fitness < self.best.fitness:
-				self.best = copy.deepcopy(self.parents[0])
-				#self.best = self.parents[0]
+				#self.best = copy.deepcopy(self.parents[0])
+				self.best = self.parents[0]
 				self.circuitlog.critical(
 					self.problem.print_(self.best.phenotype))
 				log.info('Best:\n%s',

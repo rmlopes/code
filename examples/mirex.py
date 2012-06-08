@@ -18,32 +18,11 @@ allclasses = nparray([int(c)
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
 projected = numpy.load('datafiles/projectedfeat-04.npy')
-myitercount = 0
 zipped = zip(allclasses, projected)
-workingset = sample(zipped,int(0.3*len(zipped)))
+splitindex = int(.7*len(zipped))
 
-class MIREX(ReNCoDeProb):
-    extrafuns = ['exp_','min','max','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
-    def __init__(self, evaluate):
-        self.labels = None
-        ReNCoDeProb.__init__(self,evaluate)
-        self.terms.extend(["inputs[%i]"%i 
-                           for i in range(1,len(zipped[0][1]))])
-        self.funs.extend(self.extrafuns)
-        self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
     
-def nnlikefun(mapped, node_inputs, inputs):
-	if not node_inputs:
-            return eval(mapped)
-	mainmod = __import__('__main__')
-	if len(node_inputs) == 1:
-            return getattr(mainmod, mapped)(node_inputs[0])
-        if mapped in MIREX.extrafuns:
-            return getattr(mainmod, mapped)(node_inputs)
-        return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
-                      node_inputs)
-
-def evaluate(circuit, test = False):
+def evaluatemulticlass(circuit, test = False):
     if len(circuit) < 4:
         return 1e4
     #numinputs = [not c[2] for c in circuit[-5:]].count(1)
@@ -53,14 +32,9 @@ def evaluate(circuit, test = False):
     ok = 0
     last1 = 0
     last2 = 0
-    if test :
-        workingset = zipped
-    else:
-        #if  globals()['myitercount'] < edw.itercount:
-        #    globals()['myitercount'] = edw.itercount
-        #    globals()['workingset'] = sample(zipped,int(0.3*len(zipped)))
-        workingset = globals()['workingset']
-    
+
+    workingset = globals()['testset'] if test else globals()['trainset']
+
     results = []
     for c,feats in workingset:
         try:
@@ -81,16 +55,23 @@ def evaluate(circuit, test = False):
 
 if __name__ == '__main__':
     import sys
-    total = len(allclasses) 
-    splitindex = int(total*.3)
-    #classes,features = zip(*(sample(zipped, splitindex)))
-    print 'Evolving with %i examples' % splitindex
-
-    p  = MIREX(evaluate)
-    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
-    edw.run()
+        
+    #Class by command line
+    c = int(sys.argv[2])
+    zipped1 = map(lambda x: (1,x[1]) if x[0] == c else (0,x[1]),
+             zipped)
+    random.shuffle(zipped1)
+    trainset = zipped[:splitindex]
+    testset = zipped[splitindex:]
     
-    testresult = evaluate(edw.best.circuit,True)
-    print 'Generalization: '
+
+    from iris import evaluate
+    
+    p  = ClassifProb(evaluate,len(zipped[0][1]))
+    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
+    
+    edw.run()
+    testresult = evaluate(edw.best.phenotype,True)
+    print 'Accuracy: '
     print testresult
 

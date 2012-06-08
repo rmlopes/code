@@ -26,16 +26,19 @@ class LocalSearch:
 		self.codefun = codefun
 		
 	def search(self, agent,problem):
+		numevals = 0
 		for i in range(self.numiters):
 			idx = random.randint(0,len(agent.epigenome)-1)
 			agent.epigenome.invert(idx)
 			newphenotype = self.codefun(agent,problem)
 			if newphenotype != agent.phenotype:
+				numevals += 1
 				newfitness = problem.eval_(newphenotype)
 				if newfitness < agent.fitness:
 					#log.debug('Successful local search')
 					agent.fitness = newfitness
 					agent.phenotype = newphenotype
+		return numevals
 	
 
 def buildcircuit(agent, problem, **kwargs):
