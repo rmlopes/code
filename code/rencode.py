@@ -79,12 +79,13 @@ def evaluatecircuit(circuit, circuitmap, resultdict, *inputs):
 		resultdict[circuit[-1-i][0]] = result
 	return result
 
-def buildcircuit(arn, problem, **kwargs):
-	"""Returns circuit to be fed into evaluation function"""
+def buildcircuit(agent, problem, **kwargs):
+	"""Returns the circuit to be fed into the evaluation function"""
+	arn = agent.genotype
 	if not arn.promlist:
 		return []
 	graph = arn.ebindings - arn.ibindings
-	_cleanpairs(graph)
+	cleanpairs(graph)
 	promlist = [(p[0], 
 		     _getinputlist(
 				arn.promlist, 
@@ -94,11 +95,11 @@ def buildcircuit(arn, problem, **kwargs):
 	promlist.sort(key=lambda x: len(x[1]),reverse=True)
 	circuit = []
 	pdict = dict(zip(arn.promlist,arn.proteins))
-	_buildcircuit(circuit, problem, pdict, dict(promlist), 
+	recursivebuild(circuit, problem, pdict, dict(promlist), 
 		      graph, [promlist[0][0]], [], [])
 	return circuit
 
-def _buildcircuit(circuit, problem, proteindict, inputdict, graph,
+def recursivebuild(circuit, problem, proteindict, inputdict, graph,
 		  pqueue, secondqueue, blacklist):
 	if not pqueue:
 		if not secondqueue: return circuit
@@ -134,10 +135,10 @@ def _buildcircuit(circuit, problem, proteindict, inputdict, graph,
 	pqueue, secondqueue = _mergequeues(pqueue, secondqueue, inputdict)
 	pqueue.sort(key=lambda x: len(inputdict[x]), reverse = True)
 
-	return _buildcircuit(circuit, problem, proteindict, inputdict, 
+	return recursivebuild(circuit, problem, proteindict, inputdict, 
 			     graph, pqueue,secondqueue, blacklist)	
 
-def _cleanpairs(matrix):
+def cleanpairs(matrix):
 	s = len(matrix)
 	for i in range(s):
 		for j in range(i):

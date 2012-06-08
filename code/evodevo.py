@@ -46,6 +46,7 @@ class Problem:
 		self.eval_ = evaluate	
 		self.print_ = partial(print_, labels = self.labels)
 		self.arity = dict(zip(self.funs,[0]*len(self.funs)))
+
 		
 ### Main class of the library
 class EvoDevoWorkbench:
@@ -87,16 +88,27 @@ class EvoDevoWorkbench:
 		self.mutate_ = partial(bitflipmutation,
 				       mutrate = mutrate)
 		self.itercount = 0
+		self.localsearch = config.get('default','localsearch')
+		if self.localsearch:
+			log.info('Initializing local search holder')
+			mainmod = __import__('__main__')
+			self.localsearch = getattr(mainmod, 
+						   self.localsearch)(5,codefun)
 		
 	def step(self):
 		log.info('Mapping population to circuit...')
 		for i in self.population:
-			i.phenotype = self.codefun(i.genotype,self.problem)
+			i.phenotype = self.codefun(i,self.problem)
 		
 		log.info('Evaluating population...')
 		for i in self.population:
 			i.fitness = self.problem.eval_(i.phenotype)
 		self.numevals += len(self.population)
+		
+		if self.localsearch:
+			log.info('Performing local search...')
+			for i in self.population:
+				self.localsearch.search(i,self.problem)
 		
 		log.info('Selecting parents...')
 		#there is a bug in functools.partial in Py2.6
@@ -125,8 +137,8 @@ class EvoDevoWorkbench:
 			log.debug(self.parents[0].fitness)
 			log.debug(self.best.fitness)
 			if self.parents[0].fitness < self.best.fitness:
-				#self.best = copy.deepcopy(self.parents[0])
-				self.best = self.parents[0]
+				self.best = copy.deepcopy(self.parents[0])
+				#self.best = self.parents[0]
 				self.circuitlog.critical(
 					self.problem.print_(self.best.phenotype))
 				log.info('Best:\n%s',
