@@ -32,7 +32,6 @@ def evaluate(circuit, test = False):
             result = evaluatecircuit(circuit, nnlikefun,
                                      dict(), *feats)
         except:
-         #   print 'AHAHAHAH'
             return 1e4
         
         result = 1 if result > 0 else 0
@@ -47,6 +46,16 @@ def evaluate(circuit, test = False):
             tn += 1
         elif not c and result:
             fp += 1
+=======
+            if int(c) and result :
+                tp += 1
+            elif int(c) and not result:
+                fn += 1
+            elif not int(c) and not result:
+                tn += 1
+            elif not int(c) and result:
+                fp += 1
+>>>>>>> 822d6b6d7a71a003d027a682992b4031bf9a824a
 
 	    #print sample(results,10)
     return  1.0 - (float(tp + tn) / float(tp + tn + fp + fn))    
@@ -57,8 +66,13 @@ if __name__ == '__main__':
     p  = ClassifProb(evaluate,len(everything[0][1]))
     edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
     
+<<<<<<< HEAD
     cl = int(sys.argv[2])
     everything = map(lambda x: (1,x[1]) if x[0] == cl else (0,x[1]),
+=======
+    cl = sys.argv[2]
+    everything = map(lambda x: (1,x[1]) if x[0] == 2 else (0,x[1]),
+>>>>>>> 822d6b6d7a71a003d027a682992b4031bf9a824a
                  everything)
 
     random.shuffle(everything)
