@@ -3,6 +3,7 @@ from code.evodevo import *
 from code.operators import *
 from code.rencode import *
 from code.utils.mathlogic import *
+from code.epicode import LocalSearch,EpiCoDeAgent
 
 
 class Fibonacci(ReNCoDeProb):
@@ -44,8 +45,8 @@ def evaluate(circuit, nelems = 10):
 
 if __name__ == '__main__':
     p  = Fibonacci(evaluate)
-    print sys.argv
-    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
+    #print sys.argv
+    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,EpiCoDeAgent)
     edw.run()
     genresult = evaluate(edw.best.circuit, 100)
     print 'Generalization: '

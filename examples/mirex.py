@@ -17,10 +17,8 @@ allclasses = nparray([int(c)
 
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-projected = numpy.load('datafiles/projectedfeat-04.npy')
+projected = numpy.load('datafiles/projectedfeat-01.npy')
 zipped = zip(allclasses, projected)
-splitindex = int(.7*len(zipped))
-
     
 def evaluatemulticlass(circuit, test = False):
     if len(circuit) < 4:
@@ -53,25 +51,28 @@ def evaluatemulticlass(circuit, test = False):
     #print sample(results,10)
     return  len(workingset) - ok    
 
+from iris import wrapevaluate
+
 if __name__ == '__main__':
     import sys
         
+    splitindex1 = int(.6*len(zipped))
+    #splitindex2 = int(.2*len(zipped)) + splitindex1
     #Class by command line
     c = int(sys.argv[2])
     zipped1 = map(lambda x: (1,x[1]) if x[0] == c else (0,x[1]),
              zipped)
     random.shuffle(zipped1)
-    trainset = zipped[:splitindex]
-    testset = zipped[splitindex:]
+    trainset = zipped1[:splitindex1]
+    testset = zipped1[splitindex1:]
+    #valset = zipped1[splitindex2:]
     
 
-    from iris import evaluate
     
-    p  = ClassifProb(evaluate,len(zipped[0][1]))
+    p  = ClassifProb(wrapevaluate,len(zipped[0][1]))
     edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
     
     edw.run()
-    testresult = evaluate(edw.best.phenotype,True)
-    print 'Accuracy: '
+    testresult = wrapevaluate(edw.best.phenotype,True)
     print testresult
 

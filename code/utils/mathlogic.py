@@ -73,6 +73,16 @@ def or_(in1, in2 = 0):
     return result
 
 
+### CLASSIFICATION ###
+
+def mcc(tp, tn, fp, fn):
+    '''Matthews Correlation Coefficient'''
+    den = sqrt((tp + fp)*(tp + fn)*(tn + fp)*(tn + fn))
+    if not den:
+        den = 1
+    return (tp * tn - fp * fn) / den
+
+
 #FROM http://code.activestate.com/recipes/384122-infix-operators/
 # definition of an Infix operator class
 # this recipe also works in jython

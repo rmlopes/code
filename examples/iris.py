@@ -15,10 +15,11 @@ data =[map(lambda t: float(t), l.split(','))
 print data[0]
 
 everything = [(d[4],d[:4]) for d in data]
+defaultdiscard = (0,0,1,1)
 
 def evaluate(circuit, test = False):
     if len(circuit) < 4:
-        return 1e4
+        return defaultdiscard
     mainmod = __import__('__main__')
     #workingset = globals()['testset'] if test else globals()['trainset']
     workingset = getattr(mainmod,
@@ -32,11 +33,11 @@ def evaluate(circuit, test = False):
             result = evaluatecircuit(circuit, nnlikefun,
                                      dict(), *feats)
         except:
-            return 1e4
+            return defaultdiscard
         
         result = 1 if result > 0 else 0
-        if test:
-            print c, result
+        #if test:
+        #print c, result
             
         if c and result :
             tp += 1
@@ -48,12 +49,17 @@ def evaluate(circuit, test = False):
             fp += 1
 
 	    #print sample(results,10)
-    return  1.0 - (float(tp + tn) / float(tp + tn + fp + fn))    
+    return tp, tn, fp, fn    
 
+def wrapevaluate(circuit, test = False):
+    results = evaluate(circuit, test)
+    if test:
+        print "%i\t%i\t%i\t%i" % results
+    return 1 - mcc(*results)
 
 if __name__ == '__main__':
     import sys
-    p  = ClassifProb(evaluate,len(everything[0][1]))
+    p  = ClassifProb(wrapevaluate,len(everything[0][1]))
     edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
     
     cl = int(sys.argv[2])
@@ -66,7 +72,6 @@ if __name__ == '__main__':
     testset = everything[splitindx:]
 
     edw.run()
-    testresult = evaluate(edw.best.phenotype,True)
-    print 'Test accuracy: '
+    testresult = wrapevaluate(edw.best.phenotype,True)
     print testresult
 
