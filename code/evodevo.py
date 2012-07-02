@@ -17,16 +17,20 @@ log = logging.getLogger(__name__)
 
 evologhead = str('Best\tNumProteins\tNumFunctions\tNumInactive\t'+
 		 'GeneSize\tEvaluations\tAvgBest\tAvgNumProteins\t'+
-		 'AvgNumFunctions\tAvgGeneSize')
+		 'AvgNumFunctions\tAvgGeneSize\tMutRate')
 
 class Agent:
 	__metaclass__ = ABCMeta
+	parentfit = 1e4
 	@abstractproperty
 	def genotype(self): pass
 	@abstractproperty
 	def phenotype(self): pass
 	@abstractproperty
 	def fitness(self): pass
+
+	def __init__(self, pfit):
+		self.parentfit = pfit
 	
 
 #Problem base for htis module
@@ -78,10 +82,13 @@ class EvoDevoWorkbench:
 		self.arnconfig = ConfigParser.ConfigParser()
 		self.arnconfig.readfp(open(arncfg))
 		self.agentclass = partial(agentclass, config = self.arnconfig)
-		mutrate = config.getfloat('default','mutrate')
+		self.mutrate = config.getfloat('default','mutrate')
+		self.orig_mutrate = self.mutrate
 		self.mutate_ = partial(bitflipmutation,
-				       mutrate = mutrate)
-		
+				       mutrate = self.mutrate)
+		self.improves = 0
+		self.tempevals = 0
+
 		self.localsearch = config.get('default','localsearch')
 		if self.localsearch:
 			log.info('Initializing local search holder')
@@ -104,6 +111,8 @@ class EvoDevoWorkbench:
 		for i in self.population:
 			i.fitness = self.problem.eval_(i.phenotype)
 		self.numevals += len(self.population)
+
+		self.adaptmutrate()
 		
 		if self.localsearch:
 			log.info('Performing local search...')
@@ -125,7 +134,8 @@ class EvoDevoWorkbench:
 		self.population = [self.agentclass( 
 				gcode = self.mutate_(
 					op_(gcodeclass(p.genotype.code),
-					    *self.opargs))) 
+					    *self.opargs)),
+				parentfit = p.fitness) 
 				   for p in self.parents
 				   for i in range(self.popratio)]
 		
@@ -158,6 +168,29 @@ class EvoDevoWorkbench:
 		print str(clock()-start)+ "sec."
 		return self.best
 
+	def adaptmutrate(self):
+		improves = [p.fitness <= p.parentfit for p in self.population]
+		self.improves += improves.count(True)
+		self.tempevals += self.popsize
+
+		
+		if self.itercount % 10 == 0:
+			if self.improves >= .2*self.tempevals:
+				self.mutrate /= 0.85
+			else:
+				self.mutrate *= 0.85
+			self.improves = 0
+			self.tempevals = 0
+			
+		if self.mutrate < .5*self.orig_mutrate:
+			self.mutrate *= 2
+
+		#print 'mutrate = %f' % (self.mutrate,)
+
+		self.mutate_ = partial(bitflipmutation,
+				       mutrate = self.mutrate)
+		
+
 	def _logiteration(self):
 		log.info('Logging...')
 		tolog = [self.best.fitness]
@@ -174,6 +207,7 @@ class EvoDevoWorkbench:
 				  for p in self.parents])/self.parentpsize)
 		tolog.append(sum([len(p.genotype.code) 
 				  for p in self.parents])/self.parentpsize)
+		tolog.append(self.mutrate)
 		self.evolog.critical(
 			reduce(lambda m,n: str(m)+'\t'+str(n), tolog))
 

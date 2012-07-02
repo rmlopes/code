@@ -39,8 +39,8 @@ class ReNCoDeAgent(Agent):
 	genotype = None
 	phenotype = None
 	fitness = None
-	def __init__(self, config, gcode = None):
-		Agent.__init__(self)
+	def __init__(self, config, gcode = None, parentfit = 1e4):
+		Agent.__init__(self, parentfit)
 		generator = arn.bindparams(config, arn.generatechromo)
 		if gcode == None:
 			gcode = generator()

@@ -12,13 +12,13 @@ import numpy
 numclasses = 5
 allclasses = nparray([int(c) 
                       for c in open('datafiles/MIREXclasses.txt').readlines()])
-#allfeatures =nparray([map(lambda t: float(t), l.split(',')) 
-#                      for l in open('datafiles/FMnorm.txt').readlines()])
+allfeatures =nparray([map(lambda t: float(t), l.split(',')) 
+                      for l in open('datafiles/FMnorm.txt').readlines()])
 
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-projected = numpy.load('datafiles/projectedfeat-01.npy')
-zipped = zip(allclasses, projected)
+#projected = numpy.load('datafiles/projectedfeat-01.npy')
+zipped = zip(allclasses, allfeatures)#projected)
     
 def evaluatemulticlass(circuit, test = False):
     if len(circuit) < 4:
@@ -54,9 +54,8 @@ def evaluatemulticlass(circuit, test = False):
 from iris import wrapevaluate
 
 if __name__ == '__main__':
-    import sys
-        
-    splitindex1 = int(.6*len(zipped))
+    import sys    
+    splitindex1 = int(.7*len(zipped))
     #splitindex2 = int(.2*len(zipped)) + splitindex1
     #Class by command line
     c = int(sys.argv[2])
