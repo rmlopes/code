@@ -8,6 +8,9 @@ from random import sample
 #import matplotlib.mlab as mlab
 from numpy import array as nparray
 import numpy
+import logging
+
+log = logging.getLogger('mirex')
 
 numclasses = 5
 allclasses = nparray([int(c) 
@@ -57,11 +60,11 @@ def fmeas_eval(circuit, test = False):
     results = evaluate(circuit, test)
     tp, tn, fp, fn = results
     if test:
-        print "%i\t%i\t%i\t%i" % results
+        log.critical("%i\t%i\t%i\t%i", results[0],results[1],results[2],results[3])
     try: 
         f = fmeasure(tp, fp, fn)
     except ZeroDivisionError:
-        f = -10
+        f = 0
     return 1 - f 
     
 
@@ -73,17 +76,36 @@ if __name__ == '__main__':
     c = int(sys.argv[2])
     zipped1 = map(lambda x: (1,x[1]) if x[0] == c else (0,x[1]),
              zipped)
-    random.shuffle(zipped1)
-    trainset = zipped1[:splitindex1]
-    testset = zipped1[splitindex1:]
-    #valset = zipped1[splitindex2:]
+    #random.shuffle(zipped1)
     
+    cset = filter(lambda x: x[0] == 1, zipped1)
+    otherset = filter(lambda x: x[0] == 0, zipped1)
+    workset = cset + random.sample(otherset, len(cset))
+    random.shuffle(workset)
+    print "workset size: %i" % (len(workset),)
 
-    
+    foldsize = int(.1*len(workset))
+    folds = []
+    for i in range(10):
+        start = i*foldsize
+        folds.append(workset[start:start+foldsize]) 
+    print "Created %i folds" % (len(folds),)
+
     p  = ClassifProb(fmeas_eval,len(zipped[0][1]))
     edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
+        
+    vresults = 0
+    for i in range(10):
+        testset = folds[i]
+        trainset = []
+        for j in range(10):
+            if j != i:
+                trainset.extend(folds[j])
+        
+        print "Train size is %i and Test size is %i" % (len(trainset),len(testset)) 
     
-    edw.run()
-    testresult = fmeas_eval(edw.best.phenotype,True)
-    print testresult
+        edw.run()
+        vresults += fmeas_eval(edw.best.phenotype,True)
+        
+    log.critical("%f", vresults/10)
 
