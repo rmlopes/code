@@ -51,7 +51,19 @@ def evaluatemulticlass(circuit, test = False):
     #print sample(results,10)
     return  len(workingset) - ok    
 
-from iris import wrapevaluate
+from iris import evaluate
+
+def fmeas_eval(circuit, test = False):
+    results = evaluate(circuit, test)
+    tp, tn, fp, fn = results
+    if test:
+        print "%i\t%i\t%i\t%i" % results
+    try: 
+        f = fmeasure(tp, fp, fn)
+    except ZeroDivisionError:
+        f = -10
+    return 1 - f 
+    
 
 if __name__ == '__main__':
     import sys    
@@ -68,10 +80,10 @@ if __name__ == '__main__':
     
 
     
-    p  = ClassifProb(wrapevaluate,len(zipped[0][1]))
+    p  = ClassifProb(fmeas_eval,len(zipped[0][1]))
     edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
     
     edw.run()
-    testresult = wrapevaluate(edw.best.phenotype,True)
+    testresult = fmeas_eval(edw.best.phenotype,True)
     print testresult
 

@@ -112,7 +112,7 @@ class EvoDevoWorkbench:
 			i.fitness = self.problem.eval_(i.phenotype)
 		self.numevals += len(self.population)
 
-		self.adaptmutrate()
+		#self.adaptmutrate()
 		
 		if self.localsearch:
 			log.info('Performing local search...')

@@ -82,6 +82,11 @@ def mcc(tp, tn, fp, fn):
         den = 1
     return (tp * tn - fp * fn) / den
 
+def fmeasure(tp, fp, fn):
+    precision = tp / float(tp + fp)
+    recall = tp / float(tp + fn) 
+    return 2 * precision * recall / (precision + recall)
+
 
 #FROM http://code.activestate.com/recipes/384122-infix-operators/
 # definition of an Infix operator class
