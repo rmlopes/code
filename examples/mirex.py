@@ -20,8 +20,7 @@ allfeatures =nparray([map(lambda t: float(t), l.split(','))
 
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-#projected = numpy.load('datafiles/projectedfeat-01.npy')
-zipped = zip(allclasses, allfeatures)#projected)
+projected = numpy.load('datafiles/projectedfeat-01.npy')
     
 def evaluatemulticlass(circuit, test = False):
     if len(circuit) < 4:
@@ -70,6 +69,14 @@ def fmeas_eval(circuit, test = False):
 
 if __name__ == '__main__':
     import sys    
+    if sys.argv[3]  == 'pca': #nopca
+        zipped = zip(allclasses, projected)
+    elif sys.argv[3] == 'original':
+        zipped = zip(allclasses, allfeatures)
+
+
+    print "NumFeatures: %i "% (len(zipped[0][1]))
+
     splitindex1 = int(.7*len(zipped))
     #splitindex2 = int(.2*len(zipped)) + splitindex1
     #Class by command line
