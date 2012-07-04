@@ -156,6 +156,12 @@ def recursivebuild(circuit, problem, proteindict, inputdict, graph,
 			    and (inp >= 0)]) 
 	
 	pqueue, secondqueue = _mergequeues(pqueue, secondqueue, inputdict)
+	#update input dict if not using feedback
+	if not problem.feedback:
+		for k,v in inputdict.items():
+			inputdict[k] = filter(
+				lambda i: i not in [c[0] for c in circuit], v)
+
 	pqueue.sort(key=lambda x: len(inputdict[x]), reverse = True)
 
 	return recursivebuild(circuit, problem, proteindict, inputdict, 
