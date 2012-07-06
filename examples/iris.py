@@ -20,6 +20,7 @@ defaultdiscard = (0,0,1,1)
 def evaluate(circuit, test = False):
     if len(circuit) < 4:
         return defaultdiscard
+    
     mainmod = __import__('__main__')
     #workingset = globals()['testset'] if test else globals()['trainset']
     workingset = getattr(mainmod,

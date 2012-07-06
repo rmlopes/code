@@ -21,6 +21,6 @@ pcafeats = mlab.PCA(allfeatures)
 #print pcafeats.fracs
 #print pcafeats.Y[0,:]
 
-projected = pcafeats.project(allfeatures,0.01)
+projected = pcafeats.project(allfeatures,0.03)
 print projected[:1]
-numpy.save('datafiles/projectedfeat-01', projected)
+numpy.save('datafiles/projectedfeat-03', projected)

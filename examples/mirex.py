@@ -20,7 +20,7 @@ allfeatures =nparray([map(lambda t: float(t), l.split(','))
 
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-projected = numpy.load('datafiles/projectedfeat-01.npy')
+projected = numpy.load('datafiles/projectedfeat-02.npy')
     
 def evaluatemulticlass(circuit, test = False):
     if len(circuit) < 4:
@@ -56,15 +56,23 @@ def evaluatemulticlass(circuit, test = False):
 from iris import evaluate
 
 def fmeas_eval(circuit, test = False):
+    mainmod = __import__('__main__')
+    terminals = set([n[1] for n in circuit if not n[2]])
+    p =  getattr(mainmod,'problem')
+    #print terminals
+    #print p.terms
+    #penalty = len(p.terms) - len(terminals)
+    penalty = 0
     results = evaluate(circuit, test)
     tp, tn, fp, fn = results
     if test:
-        log.critical("%i\t%i\t%i\t%i", results[0],results[1],results[2],results[3])
+        log.critical("%i\t%i\t%i\t%i", *results)
     try: 
         f = fmeasure(tp, fp, fn)
     except ZeroDivisionError:
-        f = 0
-    return 1 - f 
+        f = -1
+
+    return (1 - f)*(1 + penalty) 
     
 
 if __name__ == '__main__':
@@ -93,13 +101,14 @@ if __name__ == '__main__':
 
     foldsize = int(.1*len(workset))
     folds = []
-    for i in range(10):
+    for i in range(9):
         start = i*foldsize
         folds.append(workset[start:start+foldsize]) 
+    folds.append(workset[9*foldsize:])
     print "Created %i folds" % (len(folds),)
 
-    p  = ClassifProb(fmeas_eval,len(zipped[0][1]))
-    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
+    problem  = ClassifProb(fmeas_eval,len(zipped[0][1]))
+    edw = EvoDevoWorkbench(sys.argv[1],problem,buildcircuit,ReNCoDeAgent)
         
     vresults = 0
     for i in range(10):
