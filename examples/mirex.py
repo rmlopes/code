@@ -20,7 +20,7 @@ allfeatures =nparray([map(lambda t: float(t), l.split(','))
 
 #pcafeats = mlab.PCA(allfeatures)
 #projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
-projected = numpy.load('datafiles/projectedfeat-02.npy')
+projected = numpy.load('datafiles/projectedfeat-01.npy')
     
 def evaluatemulticlass(circuit, test = False):
     if len(circuit) < 4:
@@ -77,21 +77,24 @@ def fmeas_eval(circuit, test = False):
 
 if __name__ == '__main__':
     import sys    
-    if sys.argv[3]  == 'pca': #nopca
-        zipped = zip(allclasses, projected)
-    elif sys.argv[3] == 'original':
-        zipped = zip(allclasses, allfeatures)
+    try:
+        if sys.argv[3]  == 'pca': #nopca
+            zipped = zip(allclasses, projected)
+        elif sys.argv[3] == 'original':
+            zipped = zip(allclasses, allfeatures)
 
+        numfolds = int(sys.argv[4])
+        print "NumFeatures: %i "% (len(zipped[0][1]))
 
-    print "NumFeatures: %i "% (len(zipped[0][1]))
-
-    splitindex1 = int(.7*len(zipped))
-    #splitindex2 = int(.2*len(zipped)) + splitindex1
     #Class by command line
-    c = int(sys.argv[2])
+        c = int(sys.argv[2])
+    except:
+        print "usage: python -m examples.mirex <config> <classnum> <features> <numfolds>"
+        print "example: python -m examples.mirex test.cfg 1 pca 3"
+        exit(0)
+
     zipped1 = map(lambda x: (1,x[1]) if x[0] == c else (0,x[1]),
-             zipped)
-    #random.shuffle(zipped1)
+                  zipped)
     
     cset = filter(lambda x: x[0] == 1, zipped1)
     otherset = filter(lambda x: x[0] == 0, zipped1)
@@ -99,22 +102,22 @@ if __name__ == '__main__':
     random.shuffle(workset)
     print "workset size: %i" % (len(workset),)
 
-    foldsize = int(.1*len(workset))
+    foldsize = int(len(workset)/numfolds)
     folds = []
-    for i in range(9):
+    for i in range(numfolds-1):
         start = i*foldsize
         folds.append(workset[start:start+foldsize]) 
-    folds.append(workset[9*foldsize:])
-    print "Created %i folds" % (len(folds),)
+    folds.append(workset[(numfolds-1)*foldsize:])
+    print "Created %i folds" % (numfolds,)
 
     problem  = ClassifProb(fmeas_eval,len(zipped[0][1]))
     edw = EvoDevoWorkbench(sys.argv[1],problem,buildcircuit,ReNCoDeAgent)
         
     vresults = 0
-    for i in range(10):
+    for i in range(numfolds):
         testset = folds[i]
         trainset = []
-        for j in range(10):
+        for j in range(numfolds):
             if j != i:
                 trainset.extend(folds[j])
         
@@ -123,5 +126,5 @@ if __name__ == '__main__':
         edw.run()
         vresults += fmeas_eval(edw.best.phenotype,True)
         
-    log.critical("%f", vresults/10)
+    log.critical("%f", vresults/numfolds)
 
