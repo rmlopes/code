@@ -17,8 +17,8 @@ print data[0]
 everything = [(d[4],d[:4]) for d in data]
 defaultdiscard = (0,0,1,1)
 
-def evaluate(circuit, test = False):
-    if len(circuit) < 4:
+def evaluate(circuit, test = False, relax = False):
+    if len(circuit) < 4 and not relax:
         return defaultdiscard
     
     mainmod = __import__('__main__')
@@ -30,11 +30,11 @@ def evaluate(circuit, test = False):
     tn = 0 
     fn = 0
     for c,feats in workingset:
-        try:
-            result = evaluatecircuit(circuit, nnlikefun,
-                                     dict(), *feats)
-        except:
-            return defaultdiscard
+        #try:
+        result = evaluatecircuit(circuit, nnlikefun,
+                                 dict(), *feats)
+        #except:
+         #   return defaultdiscard
         
         result = 1 if result > 0 else 0
         #if test:

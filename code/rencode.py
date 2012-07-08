@@ -24,7 +24,7 @@ class ReNCoDeProb(Problem):
 
 
 class ClassifProb(ReNCoDeProb):
-    extrafuns = ['exp_','min','max','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
+    extrafuns = ['exp_','min_','max_','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
     def __init__(self, evaluate, numfeat):
         self.labels = None
         ReNCoDeProb.__init__(self,evaluate)
@@ -72,13 +72,18 @@ def mergefun(mapped, node_inputs, inputs):
 	return result
 
 def nnlikefun(mapped, node_inputs, inputs):
-	if not node_inputs:
-            return eval(mapped)
 	mainmod = __import__('__main__')
+	if not node_inputs:
+            try:
+                return eval(mapped)
+            except NameError:
+                return getattr(mainmod, mapped)(inputs)
+
 	if len(node_inputs) == 1:
             return getattr(mainmod, mapped)(node_inputs[0])
         if mapped in ClassifProb.extrafuns:
-            return getattr(mainmod, mapped)(node_inputs)
+            return getattr(mainmod, mapped)(*node_inputs)
+        #print mapped, node_inputs
         return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
                       node_inputs)
 	

@@ -18,40 +18,8 @@ allclasses = nparray([int(c)
 allfeatures =nparray([map(lambda t: float(t), l.split(',')) 
                       for l in open('datafiles/FMnorm.txt').readlines()])
 
-#pcafeats = mlab.PCA(allfeatures)
-#projected = pcafeats.Y[:,:16]#pcafeats.project(allfeatures)
 projected = numpy.load('datafiles/projectedfeat-01.npy')
-    
-def evaluatemulticlass(circuit, test = False):
-    if len(circuit) < 4:
-        return 1e4
-    #numinputs = [not c[2] for c in circuit[-5:]].count(1)
-    #numinputs = isinputlist.count(1)
-    #if numinputs < 5:
-     #   return 1e4
-    ok = 0
-    last1 = 0
-    last2 = 0
-
-    workingset = globals()['testset'] if test else globals()['trainset']
-
-    results = []
-    for c,feats in workingset:
-        try:
-            result = evaluatecircuit(circuit, nnlikefun,
-                                     dict(), *feats)
-        except:
-            return len(workingset)
-        if result < 0 or result > 1.0 or isnan(result):
-           return 1e4
-        rclass = int(result*(numclasses-1))+1
-        #rclass = int(result % (numclasses-1)) + 1
-        #results.append(rclass)
-        if rclass == c:
-            ok += 1
-       
-    #print sample(results,10)
-    return  len(workingset) - ok    
+        
 
 from iris import evaluate
 
@@ -128,3 +96,35 @@ if __name__ == '__main__':
         
     log.critical("%f", vresults/numfolds)
 
+'''
+def evaluatemulticlass(circuit, test = False):
+    if len(circuit) < 4:
+        return 1e4
+    #numinputs = [not c[2] for c in circuit[-5:]].count(1)
+    #numinputs = isinputlist.count(1)
+    #if numinputs < 5:
+     #   return 1e4
+    ok = 0
+    last1 = 0
+    last2 = 0
+
+    workingset = globals()['testset'] if test else globals()['trainset']
+
+    results = []
+    for c,feats in workingset:
+        try:
+            result = evaluatecircuit(circuit, nnlikefun,
+                                     dict(), *feats)
+        except:
+            return len(workingset)
+        if result < 0 or result > 1.0 or isnan(result):
+           return 1e4
+        rclass = int(result*(numclasses-1))+1
+        #rclass = int(result % (numclasses-1)) + 1
+        #results.append(rclass)
+        if rclass == c:
+            ok += 1
+       
+    #print sample(results,10)
+    return  len(workingset) - ok
+'''

@@ -51,6 +51,12 @@ def sqrt_(*args):
     x = sum(args)
     return sqrt(x)
 
+def max_(*inputs):
+    return max(inputs)
+
+def min_(*inputs):
+    return min(inputs)
+
 ### LOGIC ###
 def nand(in1, in2 = 1):
     result = not(and_(in1, in2))
