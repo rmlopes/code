@@ -202,4 +202,12 @@ if __name__ == '__main__':
     for i in range(5):
         print "%i\t%i\t%i\t%i\t%i" % tuple(globalconfusion[i,:])
 
+    globalresults =  map(lambda x: 0 if isnan(x) else x,
+                         [fmeasure(globalconfusion[c][c],
+                                   getfalsepos(globalconfusion,c),
+                                   getfalseneg(globalconfusion,c))
+                          for c in range(len(classifiers))])
+
+    print globalresults
+    log.critical("%f", sum(globalresults)/len(globalresults))
     log.critical("%f", vresults/numfolds)
