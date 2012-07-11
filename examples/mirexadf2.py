@@ -20,109 +20,12 @@ allfeatures =nparray([map(lambda t: float(t), l.split(','))
 
 projected = numpy.load('datafiles/projectedfeat-01.npy')
 
-
-from iris import evaluate
-
-def fmeas_eval(circuit, test = False, relax = False):
-    mainmod = __import__('__main__')
-    terminals = set([n[1] for n in circuit if not n[2]])
-    p =  getattr(mainmod,'problem')
-    #print terminals
-    #print p.terms
-    #penalty = len(p.terms) - len(terminals)
-    penalty = 0
-    results = evaluate(circuit, test,relax)
-    tp, tn, fp, fn = results
-    if test:
-        log.critical("%i\t%i\t%i\t%i", *results)
-    try:
-        f = fmeasure(tp, fp, fn)
-    except ZeroDivisionError:
-        f = -1
-
-    return (1 - f)*(1 + penalty)
-
-
-#def adftermfun(mapped, node_inputs, inputs):
- #   if not terms:
-  #      mainmod = __import__('__main__')
-   #     return getattr(mainmod, mapped)(node_inputs)
-    #else:
-     #   return nnlikefun(mapped, node_inputs, inputs)
-
-def basicadf(inputs, circuit):
+def multiplexadf(inputs, circuit):
     return evaluatecircuit(circuit, nnlikefun,
                            dict(), *inputs)
 
-def runevofolds(edw, problem, folds):
-    mainmod = __import__('__main__')
-    numfolds = len(folds)
-    vresults = 0
-    bestofbest = None
-
-    for i in range(numfolds):
-        setattr(mainmod,'testset',folds[i])
-        ts = []
-        for j in range(numfolds):
-            if j != i:
-                ts.extend(folds[j])
-        setattr(mainmod,'trainset',ts)
-        print "Train size is %i and Test size is %i" % (len(ts),len(folds[i]))
-
-        edw.run()
-
-        fit = fmeas_eval(edw.best.phenotype,True)
-        vresults += fit
-        if not bestofbest:
-            bestofbest = edw.best
-        elif fit < bestofbest.fitness:
-             bestofbest = edw.best
-
-    log.critical(printdotcircuit(bestofbest.phenotype, problem.labels))
-    log.critical("%f", vresults/numfolds)
-    return vresults/numfolds, bestofbest
-
-def createADFs(edw, problem, workset):
-    mainmod = __import__('__main__')
-    i1 = 11
-    i2 = 65
-    i3 = 177
-    # Run for sub data set PsySound (11 feat)
-    problem.terms = map(lambda x: "inputs[%i]" % (x,), range(0,i1))
-    runevo(edw, workset)
-    bestpsy = edw.best.phenotype[:]
-    setattr(mainmod, 'adf0', partial(basicadf, circuit = bestpsy))
-
-    # Run for sub data set Marsyas (65 feat)
-    problem.terms = map(lambda x: "inputs[%i]" % (x,), range(i1,i1+i2))
-    runevo(edw, workset)
-    bestmarsyas = edw.best.phenotype[:]
-    setattr(mainmod,'adf1', partial(basicadf, circuit = bestmarsyas))
-
-    # Run for sub data set MIR toolbox (177 feat)
-    problem.terms = map(lambda x: "inputs[%i]" % (x,), range(i1+i2,i1+i2+i3))
-    runevo(edw, workset)
-    bestmir = edw.best.phenotype[:]
-    setattr(mainmod, 'adf2', partial(basicadf, circuit = bestmir))
-
-    print 'BEST PSY:\n'
-    printdotcircuit(bestpsy,problem.labels)
-    print 'BEST MARSYAS:\n'
-    printdotcircuit(bestmarsyas,problem.labels)
-    print 'BEST MIR:\n'
-    printdotcircuit(bestmir,problem.labels)
-    problem.terms = ['adf0', 'adf1','adf2'] #+ problem.terms
-
-def runevo(edw, data):
-
-    mainmod = __import__('__main__')
-
-    setattr(mainmod,'trainset',data)
-    print "Train size is %i " % (len(data),)
-
-    edw.run()
-    log.critical("%f", edw.best.fitness)
-    return edw.best.fitness
+from mirexadf import createADFs, runevo, runevofolds, fmeas_eval
+from iris import wrapevaluate
 
 if __name__ == '__main__':
     import sys
@@ -138,12 +41,12 @@ if __name__ == '__main__':
     #Class by command line
         c = int(sys.argv[2])
     except:
-        print "usage: python -m examples.mirex <config> <classnum> <original|pca> <numfolds>"
+        print "usage: python -m examples.mirex <config> <classnum> <features> <numfolds>"
         print "example: python -m examples.mirex test.cfg 1 pca 3"
         exit(0)
 
     #create evolutionary workbench
-    problem  = ClassifProb(fmeas_eval,len(zipped[0][1]))
+    problem  = ClassifProb(wrapevaluate,len(zipped[0][1]))
     #problem.terms = ['adf0']
     edw = EvoDevoWorkbench(sys.argv[1],problem,buildcircuit,ReNCoDeAgent)
 
@@ -165,7 +68,7 @@ if __name__ == '__main__':
 
     #no folds
     if(numfolds == 1):
-       createADFs(edw, problem, trainset)
+       #createADFs(edw, problem, trainset)
        edw.run()
        fit = fmeas_eval(edw.best.phenotype,True)
        print "F:\n",fit
@@ -173,7 +76,7 @@ if __name__ == '__main__':
     else:
         #create folds
         random.shuffle(workset)
-        createADFs(edw, problem, workset)
+        #createADFs(edw, problem, workset)
         foldsize = int(len(workset)/numfolds)
         folds = []
         for i in range(numfolds-1):
