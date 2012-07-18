@@ -6,6 +6,7 @@ from numpy import array as nparray
 from functools import partial
 from bitstring import *
 from math import exp
+import sys
 from sys import stdout
 from subprocess import call
 from utils import *
@@ -55,7 +56,7 @@ def generatechromo(initdm, mutratedm, genesize,
 
     return genome
 
-def displayARNresults(proteins, ccs, step):
+def displayARNresults(proteins, ccs, step=1):
     log.warning('Plotting simulation results for ' +
                 str(len(proteins)) + ' genes/proteins')
     plt.clf()
@@ -190,10 +191,10 @@ class ARNetwork:
 
     def simulate(self):
         if self.simtime > 0:
-            ccs = self.simfun(self.proteins, self.ccs,
+            self.ccs = self.simfun(self.proteins, self.ccs,
                               self.eweights, self.iweights)
             for i in range(len(self.proteins)):
-                self.proteins[i].append(ccs[i])
+                self.proteins[i].append(self.ccs[i])
 
     def stepsimulate(self, proteins, ccs):
          _updatenonorm(proteins, ccs, self.eweights, self.iweights, self.delta)
@@ -204,23 +205,32 @@ class ARNetwork:
 ###########################################################################
 
 if __name__ == '__main__':
-    arnconfigfile = 'arnsim.cfg'
-    log.setLevel(logging.DEBUG)
-    cfg = ConfigParser.ConfigParser()
-    cfg.readfp(open('test.cfg'))
-    proteins=[]
-    nump = 0
-    while nump < 3:
-        genome = BitStream(float=random.random(), length=32)
-        for i in range(cfg.getint('default','initdm')):
-            genome = dm_event(genome,
-                              .02)
+        arnconfigfile = '../configfiles/arnsim.cfg'
+        log.setLevel(logging.DEBUG)
+        cfg = ConfigParser.ConfigParser()
+        cfg.readfp(open(arnconfigfile))
+        proteins=[]
+        nump = 0
+        try:
+                f = open(sys.argv[1], 'r')
+                genome = BitStream(bin=f.readline())
+                arnet = ARNetwork(genome, cfg)
+        except:
+                while nump < 3:
+                        genome = BitStream(float=random.random(), length=32)
+                        for i in range(cfg.getint('default','initdm')):
+                                genome = dm_event(genome,
+                                                  .02)
 
-        arnet = ARNetwork(genome, 'arnsim.cfg')
-        nump = len(arnet.promlist)
+                                arnet = ARNetwork(genome, cfg)
+                                nump = len(arnet.promlist)
 
-    for p in arnet.proteins: print p
-    arnet.simulate()
+        for p in arnet.proteins: print p
+        f = open('genome.save','w')
+        f.write(genome.bin)
+        f.close
+        #print genome.bin
+        arnet.simulate()
 
 
 
