@@ -62,7 +62,9 @@ def displayARNresults(proteins, ccs, step=1):
     plt.clf()
     xx=[i*step for i in range(len(ccs[0]))]
     for i in range(len(proteins)):
-        plt.plot(xx, ccs[i],label=str(proteins[i][0]))
+        plt.plot(xx, ccs[i],label="%i"%(proteins[i][0],))
+
+    plt.legend()
     plt.savefig('ccoutput.png')
     call(["open", "ccoutput.png"])
 
@@ -105,6 +107,14 @@ def iterate(proteins, ccs, excite_weights, inhibit_weights,
     time = 0
     cchistory=nparray(ccs)
     while time < simtime:
+        #if time > 1500:# and time % 300 ==0 :
+         #       for i in range(len(ccs)):
+          #              if proteins[i][0] == 4498:
+           #                     ccs[i] =  .1
+        #if time > 3500:# and time % 100 ==0 :
+         #       for i in range(len(ccs)):
+          #              if proteins[i][0] == 2555:
+           #                     ccs[i] =  .1
         _update(proteins,ccs,excite_weights,inhibit_weights,delta)
         if(not(silentmode) and
            (time % (simtime*samplerate) == 0)):
@@ -165,7 +175,7 @@ def _getweights(bindings, bindingsize, beta, **kwargs):
 
 
 class ARNetwork:
-    def __init__(self, gcode, config):
+    def __init__(self, gcode, config, **kwargs):
         self.code = gcode
         self.simtime = config.getint('default','simtime')
 
@@ -173,6 +183,8 @@ class ARNetwork:
         productsfun = bindparams(config, buildproducts)
         self.promlist = promfun(gcode)
         self.proteins = productsfun( gcode, self.promlist)
+        #self.proteins = filter(lambda x: x[0] != 7912 and x[0] != 6651,
+        #                       self.proteins)
 
         pbindfun = bindparams(config, getbindings)
         weightsfun = bindparams(config, _getweights)
@@ -183,6 +195,11 @@ class ARNetwork:
             self.eweights = weightsfun(self.ebindings)
             self.iweights = weightsfun(self.ibindings)
             self.ccs=nparray([1.0/nump]*nump)
+            for i in range(len(self.proteins)):
+                self.proteins[i].append(self.ccs[i])
+            #for i in range(len(self.ccs)):
+              #  if self.promlist[i] == 7912:
+                #        self.ccs[i] += 0.75
         self.simfun = bindparams(config,iterate)
         self.delta = config.getfloat('default','delta')
 
@@ -191,14 +208,21 @@ class ARNetwork:
 
     def simulate(self):
         if self.simtime > 0:
-            self.ccs = self.simfun(self.proteins, self.ccs,
-                              self.eweights, self.iweights)
+            self.simfun(self.proteins, self.ccs,
+                        self.eweights, self.iweights)
             for i in range(len(self.proteins)):
-                self.proteins[i].append(self.ccs[i])
+                self.proteins[i][-1] = self.ccs[i]
 
     def stepsimulate(self, proteins, ccs):
          _updatenonorm(proteins, ccs, self.eweights, self.iweights, self.delta)
          return ccs
+
+    def nstepsim(self, n = 1000):
+        for i in range(n):
+            self.simfun(self.proteins, self.ccs,
+                        self.eweights, self.iweights)
+        for i in range(len(self.proteins)):
+            self.proteins[i][-1] = self.ccs[i]
 
 ###########################################################################
 ### Test                                                                ###
@@ -216,14 +240,14 @@ if __name__ == '__main__':
                 genome = BitStream(bin=f.readline())
                 arnet = ARNetwork(genome, cfg)
         except:
-                while nump < 3:
+                while nump < 4 or nump > 12:
                         genome = BitStream(float=random.random(), length=32)
                         for i in range(cfg.getint('default','initdm')):
                                 genome = dm_event(genome,
                                                   .02)
 
-                                arnet = ARNetwork(genome, cfg)
-                                nump = len(arnet.promlist)
+                        arnet = ARNetwork(genome, cfg)
+                        nump = len(arnet.promlist)
 
         for p in arnet.proteins: print p
         f = open('genome.save','w')

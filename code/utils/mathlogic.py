@@ -13,37 +13,50 @@ def mul_(x1, x2 = 1):
 
 def div_(x, y = 1):
     if(y==0): return 1
-    return x / y
+    return float(x) / y
 
 def tanh_(*args):
     inp = sum(args)
     return tanh(inp)
 
 def tan_(*args):
-    inp = sum(args)
-    return tanh(inp)
+    try:
+        inp = sum(args)/float(len(args))
+        return tan(inp)
+    except ValueError:
+        return 1.0
+
 def sin_(*args):
-    inp = sum(args)
-    return tanh(inp)
+    try:
+        inp = sum(args)/float(len(args))
+        return sin(inp)
+    except ValueError:
+        return 1.0
+
 def cos_(*args):
-    inp = sum(args)
-    return tanh(inp)
+    try:
+        inp = sum(args)/float(len(args))
+        return cos(inp)
+    except ValueError:
+        return 1.0
+
 def sinh_(*args):
     inp = sum(args)
-    return tanh(inp)
+    return sinh(inp)
+
 def cosh_(*args):
     inp = sum(args)
-    return tanh(inp)
+    return cosh(inp)
 
 def log_(*args):
-    x = sum(args)
+    x = sum(args)/float(len(args))
     if x <= 0: return 0
     return log(x)
 
 def exp_(*args):
     x= sum(args)
     try:
-        return exp(x)
+        returnexp(x)
     except:
         return 1
 
@@ -57,6 +70,12 @@ def max_(*inputs):
 def min_(*inputs):
     return min(inputs)
 
+def sigmoid(x):
+    try:
+        return 1.0 / (1.0 + exp(-x))
+    except OverflowError:
+        return 1.0
+
 ### LOGIC ###
 def nand(in1, in2 = 1):
     result = not(and_(in1, in2))
@@ -69,7 +88,7 @@ def nor(in1, in2 = 0):
     return result
 
 def and_(in1, in2 = 1):
-    result = (int(in1) and int(in2)) 
+    result = (int(in1) and int(in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
     return result
 
@@ -90,7 +109,7 @@ def mcc(tp, tn, fp, fn):
 
 def fmeasure(tp, fp, fn):
     precision = tp / float(tp + fp)
-    recall = tp / float(tp + fn) 
+    recall = tp / float(tp + fn)
     return 2 * precision * recall / (precision + recall)
 
 

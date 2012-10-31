@@ -65,7 +65,10 @@ class EvoDevoWorkbench:
         evolog = logging.getLogger('evolution')
         circuitlog = logging.getLogger('circuit')
         arnlog = logging.getLogger('arntofile')
-        def __init__(self, configfname, problem, codefun, agentclass):
+
+        #TODO: adapt rencode to work with  the
+        #buildfunction (codefun) out of here
+        def __init__(self, configfname, problem, agentclass):
                 config = ConfigParser.ConfigParser()
                 config.readfp(open(configfname))
 
@@ -74,7 +77,7 @@ class EvoDevoWorkbench:
                 self.evolog.critical(evologhead)
 
                 self.problem = problem
-                self.codefun = codefun
+                #self.codefun = codefun
                 self.popsize = config.getint('default','popsize')
                 self.parentpsize = config.getint('default','parentpopsize')
                 self.maxiters = config.getint('default','numiters')
@@ -89,7 +92,9 @@ class EvoDevoWorkbench:
                 arncfg = config.get('default','arnconf')
                 self.arnconfig = ConfigParser.ConfigParser()
                 self.arnconfig.readfp(open(arncfg))
-                self.agentclass = partial(agentclass, config = self.arnconfig)
+                self.agentclass = partial(agentclass,
+                                          config = self.arnconfig,
+                                          problem = problem )
                 self.mutrate = config.getfloat('default','mutrate')
                 self.orig_mutrate = self.mutrate
                 self.mutate_ = partial(bitflipmutation,
@@ -119,13 +124,9 @@ class EvoDevoWorkbench:
                 self.itercount = None
 
         def step(self):
-                log.info('Mapping population to circuit...')
-                for i in self.population:
-                        i.phenotype = self.codefun(i,self.problem)
-
                 log.info('Evaluating population...')
                 for i in self.population:
-                        i.fitness = self.problem.eval_(i.phenotype)
+                        i.fitness = self.problem.eval_(i)
                 self.numevals += len(self.population)
 
                 #self.adaptmutrate()
@@ -222,16 +223,16 @@ class EvoDevoWorkbench:
                 log.info('Logging...')
                 tolog = [self.best.fitness]
                 tolog.append(len(self.best.genotype.promlist))
-                tolog.append(len(self.best.phenotype))
-                tolog.append(tolog[-2] - tolog[-1])
+                tolog.append(0)#len(self.best.phenotype))
+                tolog.append(0)#tolog[-2] - tolog[-1])
                 tolog.append(len(self.best.genotype.code))
                 tolog.append(self.numevals)
                 tolog.append(sum([p.fitness
                                   for p in self.parents])/self.parentpsize)
                 tolog.append(sum([len(p.genotype.promlist)
                                   for p in self.parents])/self.parentpsize)
-                tolog.append(sum([len(p.phenotype)
-                                  for p in self.parents])/self.parentpsize)
+                tolog.append(0)#sum([len(p.phenotype)
+                                 # for p in self.parents])/self.parentpsize)
                 tolog.append(sum([len(p.genotype.code)
                                   for p in self.parents])/self.parentpsize)
                 tolog.append(self.mutrate)

@@ -39,14 +39,15 @@ class ReNCoDeAgent(Agent):
         genotype = None
         phenotype = None
         fitness = None
-        def __init__(self, config, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
                 Agent.__init__(self, parentfit)
                 generator = arn.bindparams(config, arn.generatechromo)
                 if gcode == None:
                         gcode = generator()
 
-                self.genotype = arn.ARNetwork(gcode,config)
-                self.phenotype = []
+                arnet = arn.ARNetwork(gcode,config)
+                self.genotype = arnet
+                self.phenotype = buildcircuit(self,problem)
                 self.fitness = 1e4
 
         def __str__(self):
@@ -112,6 +113,10 @@ def buildcircuit(agent, problem, **kwargs):
         arn = agent.genotype
         if not arn.promlist:
                 return []
+        #arn.simulate()
+        #orderedps = sorted(arn.proteins, key = lambda x: x[-1], reverse=True)
+        #print [(p[0],p[-1]) for p in orderedps]
+
         graph = arn.ebindings - arn.ibindings
         cleanpairs(graph)
         promlist = [(p[0],
@@ -125,6 +130,12 @@ def buildcircuit(agent, problem, **kwargs):
         pdict = dict(zip(arn.promlist,arn.proteins))
         recursivebuild(circuit, problem, pdict, dict(promlist),
                       graph, [promlist[0][0]], [], [])
+        #print circuit
+
+        #if orderedps[0][0] == circuit[0][0]:
+         #   print "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+        #else:
+         #   print "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
         return circuit
 
 def recursivebuild(circuit, problem, proteindict, inputdict, graph,
