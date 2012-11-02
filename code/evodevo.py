@@ -75,6 +75,7 @@ class EvoDevoWorkbench:
                 logging.config.fileConfig(config.get('default','logconf'))
                 log.info('Setting up evolutionary workbench...')
                 self.evolog.critical(evologhead)
+                mainmod = __import__('__main__')
 
                 self.problem = problem
                 #self.codefun = codefun
@@ -106,16 +107,21 @@ class EvoDevoWorkbench:
                 self.localsearch = config.get('default','localsearch')
                 if self.localsearch:
                         log.info('Initializing local search holder')
-                        mainmod = __import__('__main__')
                         self.localsearch = getattr(mainmod,
                                                    self.localsearch)(5,codefun)
 
                 self.basicadf = config.get('default','adf')
                 if self.basicadf:
                         log.info('Initializing multiplex adf skeleton')
-                        mainmod = __import__('__main__')
                         self.basicadf = getattr(mainmod,
                                                    self.basicadf)
+
+                self.interactive = config.get('default','gui')
+                if self.interactive:
+                        log.info('Interactive mode enabled. Initialiazing GUI.')
+                        _guiclass = getattr(mainmod,
+                                           self.interactive)
+                        self.gui = _guiclass(self.popsize,problem=self.problem)
 
                 self.numevals = None
                 self.population = None
@@ -125,8 +131,19 @@ class EvoDevoWorkbench:
 
         def step(self):
                 log.info('Evaluating population...')
-                for i in self.population:
+                if not self.interactive:
+                    for i in self.population:
                         i.fitness = self.problem.eval_(i)
+                else:
+                    self.gui.pop = self.population
+                    self.gui.unpause()
+                    for i in range(self.popsize):
+                        self.population[i].fitness = 1 if i in self.gui.selected else 10
+                    if not self.gui._running:
+                        self.population[self.gui.selected[0]].fitness = 0
+
+
+
                 self.numevals += len(self.population)
 
                 #self.adaptmutrate()
@@ -143,18 +160,29 @@ class EvoDevoWorkbench:
                 self.parents.extend(self.population[:])
                 self.parents.sort(key=lambda a: a.fitness)
                 del self.parents[self.parentpsize:]
-
                 log.info('Generating next population...')
                 #This will have to be refactored to use crossover!
                 op_ = _selectop(self.ops_,self.oprates)
                 gcodeclass = self.parents[0].genotype.code.__class__
-                self.population = [self.agentclass(
+                if not self.interactive:
+                    self.population = [self.agentclass(
                                 gcode = self.mutate_(
                                         op_(gcodeclass(p.genotype.code),
                                             *self.opargs)),
                                 parentfit = p.fitness)
                                    for p in self.parents
                                    for i in range(self.popratio)]
+                else:
+                    self.population = []
+                    for p in self.parents:
+                        self.population.append(p)
+                        for i in range(self.popratio - 1):
+                            self.population.append(
+                                self.agentclass(
+                                    gcode = self.mutate_(
+                                        op_(gcodeclass(p.genotype.code),
+                                            *self.opargs)),
+                                    parentfit = p.fitness))
 
         def run(self, terminate = (lambda x,y: x <= 1e-3 or y <= 0)):
                 mainmod = __import__('__main__')
