@@ -21,21 +21,21 @@ def tanh_(*args):
 
 def tan_(*args):
     try:
-        inp = sum(args)/float(len(args))
+        inp = sum(args)
         return tan(inp)
     except ValueError:
         return 1.0
 
 def sin_(*args):
     try:
-        inp = sum(args)/float(len(args))
+        inp = sum(args)
         return sin(inp)
     except ValueError:
         return 1.0
 
 def cos_(*args):
     try:
-        inp = sum(args)/float(len(args))
+        inp = sum(args)
         return cos(inp)
     except ValueError:
         return 1.0
@@ -56,7 +56,7 @@ def log_(*args):
 def exp_(*args):
     x= sum(args)
     try:
-        returnexp(x)
+        return exp(x)
     except:
         return 1
 

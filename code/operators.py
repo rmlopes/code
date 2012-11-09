@@ -22,12 +22,26 @@ def delete(code, *args):
     del code[delpos:delpos+tsize]
     return code
 
+### for now just one point
+def npoint_xover(code1,code2,*args):
+    maxl = min(len(code1),len(code2))
+    p = int(random.random() * maxl)
+    o1 = BitStream(bin=(code1[:p]+code2[p:]).bin)
+    o2 = BitStream(bin=(code2[:p]+code1[p:]).bin)
+    return o1, o2
+
 if __name__ == '__main__':
     a = BitStream('0b' + '1'*20)
     print a.bin
-    transposon(a, 10, 0.5, 20)
+    transposon(a, 10)
     print a.bin
-    junk(a, 5, 0.5, 20)
+    junk(a, 5)
     print a.bin
-    delete(a, 15, 0.5, 20)
+    delete(a, 15)
     print a.bin
+
+    a = BitStream('0b' + '1'*10)
+    b = BitStream('0b' + '0'*20)
+    c,d = npoint_xover(a,b)
+    print c.bin
+    print d.bin

@@ -100,7 +100,7 @@ def evaluatecircuit(ind, test = False, **kwargs):
         ok=0
         intinps = range(pow(2,n))
         if not test:
-                intinps = intinps + intinps + intinps
+                intinps = intinps + intinps
         #random.shuffle(intinps)
         try:
                 if kwargs['shuffle']:
@@ -109,16 +109,16 @@ def evaluatecircuit(ind, test = False, **kwargs):
                 pass
 
         for i in intinps:
-                        inputs = BitStream(uint = i, length = n)
+                inputs = BitStream(uint = i, length = n)
             #print inputs.bin
-                        normalized = nparray([float(inputs.bin[i])
-                                  for i in range(n)])
-                        normalized *= .1
-                        ind.phenotype.nstepsim(kwargs['simtime'],*normalized)
-                        out = getbinaryoutput(ind.phenotype, **kwargs)
+                normalized = nparray([float(inputs.bin[i])
+                                      for i in range(n)])
+                normalized *= .1
+                ind.phenotype.nstepsim(kwargs['simtime'],*normalized)
+                out = getbinaryoutput(ind.phenotype, **kwargs)
                         #print 'OUT: ', out
-                        if out == inputs[1+inputs[0]]:
-                                ok += 1
+                if out == inputs[1+inputs[0]]:
+                        ok += 1
 
         #print 'SILENT: ', kwargs['silentmode']
         if not kwargs['silentmode']:

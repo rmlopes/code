@@ -7,7 +7,7 @@ import random
 from math import sqrt, isnan, isinf
 from pygame import key
 from pydot import graph_from_dot_data
-from ..rencode import evaluatecircuit, regressionfun
+from ..rencode import evaluatecircuit, nnlikefun
 
 log = logging.getLogger(__name__)
 
@@ -33,10 +33,10 @@ def render_images(pop, img_size, feedback = False, **kwargs):
                 for y in range(img_size[1]):
                     if not feedback:
                         resultdict = dict()
-                    r = evaluatecircuit(i.phenotype, regressionfun,resultdict,
+                    r = evaluatecircuit(i.phenotype, nnlikefun,resultdict,
                                         *(x,y))
 
-                    if isnan(r) or isinf(r):
+                    if not isinstance(r, long) and (isnan(r) or isinf(r)):
                         r = .0
 
                     #try:
@@ -85,6 +85,7 @@ class App:
         self.zoompanel.rect = pygame.Rect(0,0,2*self.size[0],2*self.size[1])
         try:
             self.problem = kwargs['problem']
+            self.print_ = self.problem.print_
         except KeyError:
             pass
 

@@ -66,8 +66,6 @@ class EvoDevoWorkbench:
         circuitlog = logging.getLogger('circuit')
         arnlog = logging.getLogger('arntofile')
 
-        #TODO: adapt rencode to work with  the
-        #buildfunction (codefun) out of here
         def __init__(self, configfname, problem, agentclass):
                 config = ConfigParser.ConfigParser()
                 config.readfp(open(configfname))
@@ -78,7 +76,6 @@ class EvoDevoWorkbench:
                 mainmod = __import__('__main__')
 
                 self.problem = problem
-                #self.codefun = codefun
                 self.popsize = config.getint('default','popsize')
                 self.parentpsize = config.getint('default','parentpopsize')
                 self.maxiters = config.getint('default','numiters')
@@ -90,6 +87,12 @@ class EvoDevoWorkbench:
                 self.ops_, self.oprates = _initialize_ops(opnames,oprates)
                 log.debug(self.ops_)
                 log.debug(self.oprates)
+
+                self.xover_ = config.get('default','xover')
+                if self.xover_:
+                    self.xover_ = getattr(mainmod,self.xover_)
+                    self.xrate = config.getfloat('default','xrate')
+
                 arncfg = config.get('default','arnconf')
                 self.arnconfig = ConfigParser.ConfigParser()
                 self.arnconfig.readfp(open(arncfg))
@@ -137,17 +140,14 @@ class EvoDevoWorkbench:
                 else:
                     self.gui.pop = self.population
                     self.gui.unpause()
-                    for i in range(self.popsize):
-                        self.population[i].fitness = 1 if i in self.gui.selected else 10
+                    self.parents = []
+                    for i in self.gui.selected: #[-self.parentpsize]:
+                        self.population[i].fitness -= 1
                     if not self.gui._running:
                         self.population[self.gui.selected[0]].fitness = 0
 
-
-
                 self.numevals += len(self.population)
-
                 #self.adaptmutrate()
-
                 if self.localsearch:
                         log.info('Performing local search...')
                         for i in self.population:
@@ -161,28 +161,44 @@ class EvoDevoWorkbench:
                 self.parents.sort(key=lambda a: a.fitness)
                 del self.parents[self.parentpsize:]
                 log.info('Generating next population...')
-                #This will have to be refactored to use crossover!
-                op_ = _selectop(self.ops_,self.oprates)
-                gcodeclass = self.parents[0].genotype.code.__class__
-                if not self.interactive:
-                    self.population = [self.agentclass(
-                                gcode = self.mutate_(
-                                        op_(gcodeclass(p.genotype.code),
-                                            *self.opargs)),
-                                parentfit = p.fitness)
-                                   for p in self.parents
-                                   for i in range(self.popratio)]
-                else:
-                    self.population = []
+
+                #TODO: clean this code
+                offsprings = []
+                if self.xover_:
                     for p in self.parents:
-                        self.population.append(p)
-                        for i in range(self.popratio - 1):
-                            self.population.append(
-                                self.agentclass(
-                                    gcode = self.mutate_(
-                                        op_(gcodeclass(p.genotype.code),
-                                            *self.opargs)),
-                                    parentfit = p.fitness))
+                        r = random.random()
+                        if r < self.xrate:
+                            offsprings.extend( self._reproduct_agents(p,
+                                                random.choice(self.parents)))
+                    log.debug('Created %i offsprings by xover.'
+                              %(len(offsprings),))
+
+                if not self.interactive:
+                    mutants = [self._create_mutant(p)
+                               for p in self.parents
+                               for i in range(self.popratio)]
+                    self.population = (offsprings +
+                                       mutants[:(self.popsize-len(offsprings))])
+                else:
+                    mutants = [self._create_mutant(p)
+                               for p in self.parents
+                               for i in range(self.popratio-1)]
+                    self.population = (self.parents + offsprings +
+                                       mutants[:self.popsize -
+                                            (self.parentpsize+len(offsprings))])
+
+        def _reproduct_agents(self, p1, p2):
+            return [self.agentclass(gcode = self.mutate_(o),
+                                    parentfit = p1.fitness)
+                    for o in self.xover_(p1.genotype.code,
+                                         p2.genotype.code)]
+
+        def _create_mutant(self, parent):
+            op_ = _selectop(self.ops_,self.oprates)
+            gcodeclass = parent.genotype.code.__class__
+            return self.agentclass( gcode = self.mutate_(
+                op_(gcodeclass(parent.genotype.code), *self.opargs)),
+                                    parentfit = parent.fitness)
 
         def run(self, terminate = (lambda x,y: x <= 1e-3 or y <= 0)):
                 mainmod = __import__('__main__')

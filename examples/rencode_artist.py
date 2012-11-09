@@ -13,67 +13,24 @@ from code.utils.gui import App
 from code.utils.mathlogic import *
 from code.evodevo import *
 from math import isnan, isinf
+from code.operators import npoint_xover
 
 log = logging.getLogger(__name__)
 
 class ArtistProb(ReNCoDeProb):
-    extrafuns = ['log_',
-                 'sin_','cos_','tan_']
+    #funs = ['tanh_',
+     #            'sin_','cos_','tan_']
+    funs = ['add_', 'sub_', 'cos_','sin_']
     terms = ['inputs[0]','inputs[1]']
     feedback = True
+    labels = None
     def __init__(self):
         ReNCoDeProb.__init__(self,None)
-        self.labels['inputs[0]'] = 'x'
-        self.labels['inputs[1]'] = 'y'
+        #self.labels['inputs[0]'] = 'x'
+        #self.labels['inputs[1]'] = 'y'
         self.bias = random.random()
-        self.funs.extend(self.extrafuns)
-        self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
-
-'''
-def render_images(pop, app, **kwargs):
-        log.info('Rendering population...')
-        #ind.arn.nstepsim(2000)#, *inputs)
-        #get outputs
-        n = 3
-        ok=0
-        images = []
-
-        for i in pop:
-            print '######'
-            print printcircuit(i.phenotype)
-            #if not any([cnodeinput < 0
-            #            for c in circuit
-            #            for cnodeinput in c[2]]):
-            #        return pow(2,nbits)
-            log.debug('Rendering individual')
-            striped = nparray(zeros(app.img_size+(3,)), dtype='int32')
-            resultdict = dict(zip([c[0] for c in i.phenotype],
-                                  [1.0]*len(i.phenotype)))
-            for x in range(app.img_size[0]):
-                for y in range(app.img_size[1]):
-                    if not p.feedback:
-                        resultdict = dict()
-                    r = evaluatecircuit(i.phenotype, regressionfun,resultdict,
-                                        *(x,y))
-
-                    if isnan(r) or isinf(r):
-                        r = .0
-
-                    #try:
-                    if abs(r) < 1:
-                            striped[x][y] = int(abs(r) * 255)
-                    else:
-                            striped[x][y] = int(abs(r) % 255)
-                    #except ValueError:
-                     #   import traceback
-                     #   print traceback.format_exc()
-                     #   print 'r: ', r
-                     #   exit(0)
-
-            images.append(striped)
-
-        print 'done...'
-        return images'''
+#        self.funs.extend(self.extrafuns)
+        self.arity.update(zip(self.funs,[0]*len(self.funs)))
 
 def normalizexy(point, imgsize):
     return point[0]/float(imgsize[0]), point[1]/float(imgsize[1])
@@ -85,14 +42,15 @@ if __name__ == '__main__':
         #cfg.readfp(open(arnconfigfile))
 
         p = ArtistProb()
+        print p.funs
         edw = EvoDevoWorkbench(sys.argv[1],p,ReNCoDeAgent)
         edw.run()
 
         filename = "selectedcircuits.dot"
         f = open(filename,'w')
-        for i in edw.gui.selected:
-            f.write(printdotcircuit(edw.population[i].phenotype))
-            f.close
+        #for i in edw.gui.selected:
+        #f.write(printdotcircuit(edw.population[i].phenotype))
+        #f.close
 
 
         #print 'Generalization: '

@@ -170,9 +170,9 @@ def recursivebuild(circuit, problem, proteindict, inputdict, graph,
         if not problem.feedback:
                 for k,v in inputdict.items():
                         inputdict[k] = filter(
-                                lambda i: i not in [c[0] for c in circuit], v)
+                                lambda i: i not in blacklist, v)
 
-        secondqueue.extend([inp for inp in circuit[-1][2]
+        secondqueue.extend([inp for inp in inputs
                             if  inp not in (pqueue+secondqueue+blacklist)
                             and (inp >= 0)])
 
@@ -194,23 +194,38 @@ def cleanpairs(matrix):
 
 def _mergequeues(q1, q2,inputdict):
         disjunction = q2[:]
-        dependent = False
+        demoted = []
+        for e in q1:
+            dependent = False
+            if e in [p
+                     for pq_el in q1
+                     for p in inputdict[pq_el]
+                     if pq_el != e]:
+                dependent = True
+            if e in [p
+                     for pq_el in q2
+                     for p in inputdict[pq_el]]:
+                dependent = True
+            if dependent:
+                demoted.append(e)
         for e in q2:
-                if e in [p
-                         for pq_el in q1
-                         for p in inputdict[pq_el]]:
-                        dependent = True
-                if e in [p
-                         for pq_el in q2
-                         for p in inputdict[pq_el]
-                         if pq_el != e]:
-                        dependent = True
+            dependent = False
+            if e in [p
+                     for pq_el in q1
+                     for p in inputdict[pq_el]]:
+                dependent = True
+            if e in [p
+                     for pq_el in q2
+                     for p in inputdict[pq_el]
+                     if pq_el != e]:
+                dependent = True
 
-                if dependent:
-                        disjunction.remove(e)
+            if dependent:
+                disjunction.remove(e)
+        for e in demoted: q1.remove(e)
+        q2.extend(demoted)
+        for e in disjunction: q2.remove(e)
         q1.extend(disjunction)
-        for e in disjunction:
-                q2.remove(e)
         return q1,q2
 
 def _getinputlist(promlist, weights):
@@ -233,8 +248,8 @@ def printcircuit(circuit):
 def printdotcircuit(circuit, labels=None):
         s = 'digraph best {\nordering = out;\n'
         for c in circuit:
-                s += '%i [label="%s"];\n' % (c[0], c[1] if not labels
-                                             else labels[c[1]])
+                s += '%i [label="%s"];\n' % (c[0], c[1])# if not labels
+                                             #else labels[c[1]])
                 for inp in c[2]:
                         aux = "dir=back"
                         if inp < 0:
