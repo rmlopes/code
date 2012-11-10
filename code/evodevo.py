@@ -136,7 +136,7 @@ class EvoDevoWorkbench:
                 log.info('Evaluating population...')
                 if not self.interactive:
                     for i in self.population:
-                        i.fitness = self.problem.eval_(i)
+                        i.fitness = self.problem.eval_(i.phenotype)
                 else:
                     self.gui.pop = self.population
                     self.gui.unpause()

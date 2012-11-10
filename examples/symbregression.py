@@ -17,11 +17,11 @@ def kozapolynomial(inp):
 
 def quarticpolynomial(inp):
     return pow(inp,4) + pow(inp,3) + pow(inp,2) + inp
-	
+
 def evaluate(circuit, target, inputs):
     if len(circuit) < 4:
         return 100
-    errors = [abs(target(inp) - 
+    errors = [abs(target(inp) -
                   evaluatecircuit(circuit, regressionfun,dict(),inp))
               for inp in inputs]
     try:
@@ -29,7 +29,7 @@ def evaluate(circuit, target, inputs):
     except:
         log.warning('Invalid individual: overflow error...')
         return 100
-    
+
     return 100 if math.isinf(sum_) else sum_
 
 
@@ -38,6 +38,5 @@ if __name__ == '__main__':
                       target=kozapolynomial,
                       inputs=list(drange(-1,1.1,.1)))
     p = ReNCoDeProb(evalfun)
-    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
+    edw = EvoDevoWorkbench(sys.argv[1],p,ReNCoDeAgent)
     edw.run()
-    
