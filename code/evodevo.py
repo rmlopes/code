@@ -189,7 +189,8 @@ class EvoDevoWorkbench:
 
         def _reproduct_agents(self, p1, p2):
             return [self.agentclass(gcode = self.mutate_(o),
-                                    parentfit = p1.fitness)
+                                    parentfit = p1.fitness,
+                                    problem = self.problem)
                     for o in self.xover_(p1.genotype.code,
                                          p2.genotype.code)]
 
@@ -198,7 +199,8 @@ class EvoDevoWorkbench:
             gcodeclass = parent.genotype.code.__class__
             return self.agentclass( gcode = self.mutate_(
                 op_(gcodeclass(parent.genotype.code), *self.opargs)),
-                                    parentfit = parent.fitness)
+                                    parentfit = parent.fitness,
+                                    problem = self.problem)
 
         def run(self, terminate = (lambda x,y: x <= 1e-3 or y <= 0)):
                 mainmod = __import__('__main__')
