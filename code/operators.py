@@ -23,12 +23,22 @@ def delete(code, *args):
     return code
 
 ### for now just one point
-def npoint_xover(code1,code2,*args):
+def twopoint_xover(code1,code2, *args):
     maxl = min(len(code1),len(code2))
-    p = int(random.random() * maxl)
-    o1 = BitStream(bin=(code1[:p]+code2[p:]).bin)
-    o2 = BitStream(bin=(code2[:p]+code1[p:]).bin)
+    p = [int(random.random() * maxl)]
+    p.append(int(random.random() * maxl))
+    p.sort()
+    p1,p2 = p
+    o1 = BitStream(bin=(code1[:p1]+code2[p1:p2]+code1[p2:]).bin)
+    o2 = BitStream(bin=(code2[:p1]+code1[p1:p2]+code2[p2:]).bin)
     return o1, o2
+
+def onepoint_xover(code1,code2,*args):
+        maxl = min(len(code1),len(code2))
+        p = int(random.random() * maxl)
+        o1 = BitStream(bin=(code1[:p]+code2[p:]).bin)
+        o2 = BitStream(bin=(code2[:p]+code1[p:]).bin)
+        return o1, o2
 
 if __name__ == '__main__':
     a = BitStream('0b' + '1'*20)
@@ -42,6 +52,6 @@ if __name__ == '__main__':
 
     a = BitStream('0b' + '1'*10)
     b = BitStream('0b' + '0'*20)
-    c,d = npoint_xover(a,b)
+    c,d = twopoint_xover(a,b)
     print c.bin
     print d.bin
