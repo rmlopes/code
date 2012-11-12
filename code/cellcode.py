@@ -73,29 +73,29 @@ def plotindividual(arnet, **kwargs):
                           figure=STRUCTS)
 
 def getbinaryoutput(arn, **kwargs):
-        #index = self.arn.numtf + self.arn.numrec
         index = 0
         gradientsum = []
-        #for i in range(arn.numeff):
-        #   gradientsum.append(np.sum(
-        #          np.abs(np.gradient(arn.effectorhist[i]))))
-        #zipped = zip(range(arn.numeff),gradientsum)
-        #m = max(zipped, key=lambda x: x[1], reverse=True)
-        #index = m[0]
         leftlim =  -(1.0 / kwargs['samplerate'])
-        #print leftlim
         output = np.sum(np.gradient(arn.effectorhist[index][leftlim:]))
-        #if( arn.effectorhist[index][-1] -
-        #   arn.effectorhist[index][-1001]) <= 0:
-        #      output = 1
-        #else:
-        #       output = 0
         return 0 if output > 0 else 1
 
+def getoutputp0p1(arn, **kwargs):
+        index = 0
+        leftlim =  -(1.0 / kwargs['samplerate'])
+        g1 = np.sum(np.gradient(arn.effectorhist[index][leftlim:]))
+
+        try:
+                g2 = np.sum(np.gradient(arn.effectorhist[index + 1][leftlim:]))
+        except IndexError: return 0
+
+        return 1 if g2 >= g1 else 0
+
 #TODO: move this inside the problem
-def evaluatecircuit(ind, test = False, **kwargs):
-        #ind.arn.nstepsim(2000)#, *inputs)
-        #get outputs
+def evaluatecircuit(phenotype, test = False, **kwargs):
+        mapfun = getbinaryoutput
+        try:
+                mapfun = kwargs['mapfun']
+        except KeyError: pass
         n = 3
         ok=0
         intinps = range(pow(2,n))
@@ -105,8 +105,7 @@ def evaluatecircuit(ind, test = False, **kwargs):
         try:
                 if kwargs['shuffle']:
                         random.shuffle(intinps)
-        except KeyError:
-                pass
+        except KeyError: pass
 
         for i in intinps:
                 inputs = BitStream(uint = i, length = n)
@@ -114,15 +113,15 @@ def evaluatecircuit(ind, test = False, **kwargs):
                 normalized = nparray([float(inputs.bin[i])
                                       for i in range(n)])
                 normalized *= .1
-                ind.phenotype.nstepsim(kwargs['simtime'],*normalized)
-                out = getbinaryoutput(ind.phenotype, **kwargs)
+                phenotype.nstepsim(kwargs['simtime'],*normalized)
+                out = mapfun(phenotype, **kwargs)
                         #print 'OUT: ', out
                 if out == inputs[1+inputs[0]]:
                         ok += 1
 
         #print 'SILENT: ', kwargs['silentmode']
         if not kwargs['silentmode']:
-            plotindividual(ind.phenotype,**kwargs)
+            plotindividual(phenotype,**kwargs)
         return len(intinps) - ok
 
 if __name__ == '__main__':
