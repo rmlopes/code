@@ -7,7 +7,7 @@ from code.extendedarn import bindparams, displayARNresults
 
 if __name__ == '__main__':
     #p  = BooleanProb(evaluate)
-    evalf = partial(evaluatecircuit,
+    evalf = partial(evaluatewithreset,
                     mapfun = getoutputp0p1)
     p = CellProb(evalf, 3, 2)
     edw = EvoDevoWorkbench(sys.argv[1],p,Cell)

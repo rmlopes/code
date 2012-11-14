@@ -258,10 +258,14 @@ class ARNetwork:
         self.receptorhist=nparray(self.ccs[self.numtf:self.numtf+self.numrec])
         self.effectorhist=nparray(self.ccs[self.numtf+self.numrec:])
 
-    def reset(self):
+    def reset(self, cc_state = None):
         self._initializehistory()
-        self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
-                           (self.numtf+self.numeff+self.numrec))
+        if len(cc_state)==0:
+            self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
+                               (self.numtf+self.numeff+self.numrec))
+        else:
+            self.ccs = nparray(cc_state[:])
+
 
     def __str__(self):
         return str(self.proteins)

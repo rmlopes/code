@@ -124,6 +124,35 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
             plotindividual(phenotype,**kwargs)
         return len(intinps) - ok
 
+def evaluatewithreset(phenotype, test = False, **kwargs):
+        mapfun = getbinaryoutput
+        try:
+                mapfun = kwargs['mapfun']
+        except KeyError: pass
+        n = 3
+        ok=0
+        intinps = range(pow(2,n))
+
+        initstate = phenotype.ccs
+
+        for i in intinps:
+                inputs = BitStream(uint = i, length = n)
+            #print inputs.bin
+                normalized = nparray([float(inputs.bin[i])
+                                      for i in range(n)])
+                normalized *= .1
+                phenotype.nstepsim(kwargs['simtime'],*normalized)
+                out = mapfun(phenotype, **kwargs)
+                        #print 'OUT: ', out
+                if out == inputs[1+inputs[0]]:
+                        ok += 1
+                phenotype.reset(initstate)
+
+        #print 'SILENT: ', kwargs['silentmode']
+        if not kwargs['silentmode']:
+            plotindividual(phenotype,**kwargs)
+        return len(intinps) - ok
+
 if __name__ == '__main__':
         arnconfigfile = '../configfiles/arnsim.cfg'
         log.setLevel(logging.DEBUG)
