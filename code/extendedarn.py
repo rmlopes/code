@@ -128,15 +128,22 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
         for i in range(numrec):
             arnet.ccs[nump+i] = kwargs['inputs'][i]
 
-        _update(arnet.proteins,arnet.ccs,arnet.eweights,arnet.iweights,delta)
-        #normalize ccs, ignoring receptors
+        _update(arnet.proteins,arnet.ccs,arnet.eweights,arnet.iweights,
+                delta, numtf = nump)
+        #normalize ccs, ignoring effectors
         #print arnet.ccs[:nump]
-        totparcels = (arnet.ccs[:nump].tolist() +
-                      arnet.ccs[nump+numrec:].tolist())
-        arnet.ccs /= sum(totparcels)
-        #enforce again input/receptor cc
-        for i in range(numrec):
-            arnet.ccs[nump+i] = kwargs['inputs'][i]
+        totparcels = arnet.ccs[:nump].tolist()
+        #receptors ccs is not modified here
+        arnet.ccs[:nump] /= sum(totparcels)
+        #normalize outputs
+        #FIXME: should this be done?
+        for i in range(numeff):
+            if arnet.ccs[-i] > 1.0:
+                arnet.ccs[-i] = 1.0
+            elif arnet.ccs[-i] < .0:
+                arnet.ccs[-i] = .0
+        if numeff > 1:
+            arnet.ccs[nump+numrec:] /= sum(arnet.ccs[nump+numrec:])
 
         if time % int(simtime*samplerate) == 0:
             log.debug('TIME: '+ str(time))
@@ -152,15 +159,19 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
     return arnet
 
 
-def _update(proteins, ccs, exciteweights, inhibitweights,delta):
+def _update(proteins, ccs, exciteweights, inhibitweights,delta,**kwargs):
     #print ccs.shape
     deltas = (_getSignalArray(ccs[:len(exciteweights)],exciteweights) -
               _getSignalArray(ccs[:len(inhibitweights)],inhibitweights))
     #print deltas.shape
     deltas *= delta
-    deltas *= ccs
-    #total = sum(ccs)+sum(deltas)
-    ccs+=deltas
+
+    #NOTE: previous output concentration shall not be accounted for
+    numreg = exciteweights.shape[0]
+    deltas[:numreg] *= ccs[:numreg]
+    #NOTE: not touching receptors ccs
+    ccs[:kwargs['numtf']] += deltas[:kwargs['numtf']]
+    ccs[numreg:] += deltas[numreg:]
     #ccs/=total
 
 def _getSignalArray(ccs, weightstable):
@@ -239,12 +250,12 @@ class ARNetwork:
                                   self.effectors)
         self.ibindings = pbindfun(1, self.proteins + self.receptors +
                                   self.effectors)
-        # testing:non-dummy effectors also regulate
+
         #effectors and dummy receptors do not regulate
-        #if self.effectors or self.receptors:
-         #       self.ebindings = self.ebindings[:self.numtf+self.numrec,:]
+        if self.effectors or self.receptors:
+                self.ebindings = self.ebindings[:self.numtf+self.numrec,:]
                 #print 'ebinds: ', self.ebindings.shape
-          #      self.ibindings = self.ibindings[:self.numtf+self.numrec,:]
+                self.ibindings = self.ibindings[:self.numtf+self.numrec,:]
                 #print 'ibinds: ', self.ibindings.shape
 
     def _initializeweights(self, weightsfun):

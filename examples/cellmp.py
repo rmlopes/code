@@ -7,7 +7,7 @@ from code.extendedarn import bindparams, displayARNresults
 
 if __name__ == '__main__':
     #p  = BooleanProb(evaluate)
-    evalf = partial(evaluatewithreset,
+    evalf = partial(evaluatecircuit,
                     mapfun = getoutputp0p1)
     p = CellProb(evalf, 3, 2)
     edw = EvoDevoWorkbench(sys.argv[1],p,Cell)
@@ -18,8 +18,8 @@ if __name__ == '__main__':
     f.write(edw.best.phenotype.code.bin)
     f.close
 
-    plot_ = bindparams(edw.arnconfig, plotindividual)
-    plot_(edw.best.phenotype)
+    #plot_ = bindparams(edw.arnconfig, plotindividual)
+    #plot_(edw.best.phenotype)
     #genresult = test(ewd.best.circuit, range(2,20))
     #print 'Generalization: '
     #print genresult
