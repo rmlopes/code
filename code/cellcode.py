@@ -51,7 +51,7 @@ class Cell(Agent):
 
             #initialize phenotype
             self.phenotype.nstepsim(config.getint('default','simtime'),
-                                    *nparray([0.0,.0,.0]))
+                                    *nparray(np.zeros(kwargs['problem'].ninp)))
             self.fitness = 1e4
 
         def __str__(self):

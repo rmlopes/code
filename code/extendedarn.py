@@ -138,10 +138,10 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
         #normalize outputs
         #FIXME: should this be done?
         for i in range(numeff):
-            if arnet.ccs[-i] > 1.0:
-                arnet.ccs[-i] = 1.0
-            elif arnet.ccs[-i] < .0:
-                arnet.ccs[-i] = .0
+            if arnet.ccs[-1-i] > 1.0:
+                arnet.ccs[-1-i] = 1.0
+            elif arnet.ccs[-1-i] < .0:
+                arnet.ccs[-1-i] = .0
         if numeff > 1:
             arnet.ccs[nump+numrec:] /= sum(arnet.ccs[nump+numrec:])
 
