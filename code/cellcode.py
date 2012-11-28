@@ -44,7 +44,9 @@ class Cell(Agent):
             #evaluatiuon time
             self.phenotype = self.genotype
             #self.phenotype = arn.ARNetwork(gcode,config)
-            while self.phenotype.numeff == 0 or self.phenotype.numrec == 0:
+            while (self.phenotype.numeff == 0 or
+                   self.phenotype.numrec == 0 or
+                   self.phenotype.numtf == 0):
                 gcode = generator()
                 self.genotype = arn.ARNetwork(gcode, config, **kwargs)
                 self.phenotype = self.genotype
@@ -52,7 +54,7 @@ class Cell(Agent):
             #initialize phenotype
             self.phenotype.nstepsim(config.getint('default','simtime'),
                                     *nparray(np.zeros(kwargs['problem'].ninp)))
-            self.fitness = 1e4
+            self.fitness = 1e9
 
         def __str__(self):
             return "### Agent ###\n%s\n%s: %f" % (self.arn,self.circuit,

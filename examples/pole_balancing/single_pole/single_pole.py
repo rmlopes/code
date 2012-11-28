@@ -88,10 +88,19 @@ def evaluate_individual(phenotype, **kwargs):
     for trials in xrange(num_steps):
 
         # maps into [0,1]
+        # RL-NOTE: x_dot and theta_dot may go outside the defined
+        # boundaries: how to normalize then?
+        # modified to match Nicolau et al 2010 description.
+        #inputs = np.array([(x + 2.4)/4.8,
+        #                   (x_dot + 0.75)/1.5,
+        #                   (theta + twelve_degrees)/0.41,
+        #                   (theta_dot + 1.0)/2.0],
+        #                  dtype = float)
         inputs = np.array([(x + 2.4)/4.8,
-                           (x_dot + 0.75)/1.5,
-                           (theta + twelve_degrees)/0.41,
-                           (theta_dot + 1.0)/2.0],
+                           (x_dot + 1.0)/2.0,
+                           #(theta + twelve_degrees)/0.41,
+                           (theta + twelve_degrees)/( 2*twelve_degrees),
+                           (theta_dot + 1.5)/3.0],
                           dtype = float)
         # maps into cc [0,.1]
         inputs *= .1
@@ -103,7 +112,7 @@ def evaluate_individual(phenotype, **kwargs):
         output = np.sum(np.gradient(phenotype.effectorhist[0][leftlim:]))
         # Apply action to the simulated cart-pole
         #if no cc change then repeat last
-        if abs(output) <= 1e-40:
+        if abs(output) <= 1e-20:
             output = last
         x, x_dot, theta, theta_dot = cart_pole(output, x, x_dot, theta, theta_dot)
 
@@ -111,14 +120,17 @@ def evaluate_individual(phenotype, **kwargs):
         # the number of steps indicates the fitness: higher = better
         fitness += 1
         last = output
+        #RL-NOTE: original does not check for the speed boundaries
+        # Problem description in Nicoulau et al. 2010 shows closed
+        # intervals (>= should be >)
         if (abs(x) >= 2.4 or abs(theta) >= twelve_degrees):
-            #if abs(theta) > twelve_degrees: # Igel (p. 5) uses theta criteria only
+            #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
             # the cart/pole has run/inclined out of the limits
             break
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
-    plotindividual(phenotype,**kwargs)
+    #plotindividual(phenotype,**kwargs)
     return num_steps/fitness - 1
 
 if __name__ == "__main__":

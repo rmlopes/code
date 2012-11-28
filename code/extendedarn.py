@@ -132,7 +132,7 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
                 delta, numtf = nump)
         #normalize ccs, ignoring effectors
         #print arnet.ccs[:nump]
-        totparcels = arnet.ccs[:nump].tolist()
+        totparcels = arnet.ccs[:nump+numrec].tolist()
         #receptors ccs is not modified here
         arnet.ccs[:nump] /= sum(totparcels)
         #normalize outputs
