@@ -82,7 +82,7 @@ def nnlikefun(mapped, node_inputs, inputs):
 
         if len(node_inputs) == 1:
             return getattr(mainmod, mapped)(node_inputs[0])
-        if mapped in ClassifProb.extrafuns:
+        if mapped not in ReNCoDeProb.funs:
             return getattr(mainmod, mapped)(*node_inputs)
         #print mapped, node_inputs
         return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),

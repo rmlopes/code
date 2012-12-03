@@ -12,8 +12,11 @@ def mul_(x1, x2 = 1):
     return operator.mul(x1,x2)
 
 def div_(x, y = 1):
-    if(y==0): return 1
-    return float(x) / y
+    if(y==0): return 1.0
+    try:
+        return float(x) / y
+    except OverflowError:
+        return 1.0
 
 def tanh_(*args):
     inp = sum(args)
@@ -41,12 +44,18 @@ def cos_(*args):
         return 1.0
 
 def sinh_(*args):
-    inp = sum(args)
-    return sinh(inp)
+    try:
+        inp = sum(args)
+        return sinh(inp)
+    except OverflowError:
+        return 1.0
 
 def cosh_(*args):
-    inp = sum(args)
-    return cosh(inp)
+    try:
+        inp = sum(args)
+        return cosh(inp)
+    except OverflowError:
+        return 1.0
 
 def log_(*args):
     x = sum(args)/float(len(args))
