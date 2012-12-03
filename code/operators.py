@@ -1,13 +1,23 @@
+import random
+from functools import partial
 from bitstring import BitStream
 from utils import *
-import random
 
-def transposon(code, *args):
+
+def transposon(code, *args, **kwargs):
     tsize = int(args[0])
     copypos = random.randint(1, len(code)-tsize)
+    transp = code[copypos:copypos+tsize]
+    try:
+        if kwargs['excise']:
+            del code[copypos:copypos+tsize]
+    except KeyError: pass
     insertpos = random.randint(1, len(code)-tsize)
-    code.insert(code[copypos:copypos+tsize],insertpos)
+    code.insert(transp, insertpos)
     return code
+
+movingtransposon = partial(transposon,
+                           excise = True)
 
 def junk(code, *args):
     tsize = int(args[0])
@@ -58,9 +68,9 @@ def uniform_xover(code1, code2, *args):
     return (BitStream(bin = o1), BitStream(bin = o2))
 
 if __name__ == '__main__':
-    a = BitStream('0b' + '1'*20)
+    a = BitStream('0b' + '00011100011100011100')
     print a.bin
-    transposon(a, 10)
+    movingtransposon(a, 5)
     print a.bin
     junk(a, 5)
     print a.bin
