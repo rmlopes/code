@@ -70,7 +70,7 @@ def uniform_xover(code1, code2, *args):
 if __name__ == '__main__':
     a = BitStream('0b' + '00011100011100011100')
     print a.bin
-    movingtransposon(a, 5)
+    transposon(a, 5)
     print a.bin
     junk(a, 5)
     print a.bin
