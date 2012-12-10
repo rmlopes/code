@@ -26,20 +26,18 @@ save.close()
 #rstate = pickle.load(dumped)
 #random.setstate(rstate)
 #dumped.close()
+GRAVITY = 9.8
+MASSCART = 1.0
+MASSPOLE = 0.1
+TOTAL_MASS = (MASSPOLE + MASSCART)
+LENGTH = 0.5    # actually half the pole's length
+POLEMASS_LENGTH = (MASSPOLE * LENGTH)
+FORCE_MAG = 10.0
+TAU = 0.02  # seconds between state updates
+FOURTHIRDS = 1.3333333333333
 
 def cart_pole(net_output, x, x_dot, theta, theta_dot):
     ''' Directly copied from Stanley's C++ source code '''
-
-    GRAVITY = 9.8
-    MASSCART = 1.0
-    MASSPOLE = 0.1
-    TOTAL_MASS = (MASSPOLE + MASSCART)
-    LENGTH = 0.5    # actually half the pole's length
-    POLEMASS_LENGTH = (MASSPOLE * LENGTH)
-    FORCE_MAG = 10.0
-    TAU = 0.02  # seconds between state updates
-    FOURTHIRDS = 1.3333333333333
-
     if net_output > .0:
         force = FORCE_MAG
     else:
@@ -63,20 +61,28 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
 
     return x, x_dot, theta, theta_dot
 
-def evaluate_individual(phenotype, **kwargs):
+def evaluate_individual(phenotype, test = None, **kwargs):
 
     twelve_degrees = 0.2094384 #radians
     #Nicolau et al. 2010
-    num_steps = 120000 #10**5
+    if not test:
+        num_steps = 120000 #10**5
+    else:
+        num_steps = 1000
 
     #for chromo in population:
 
         #net = nn.create_phenotype(chromo)
         # initial conditions (as used by Stanley)
-    x         = random.randint(0, 4799)/1000.0 - 2.4
-    x_dot     = random.randint(0, 1999)/1000.0 - 1.0
-    theta     = random.randint(0,  399)/1000.0 - 0.2
-    theta_dot = random.randint(0, 2999)/1000.0 - 1.5
+    if not test:
+        x         = random.randint(0, 4799)/1000.0 - 2.4
+        x_dot     = random.randint(0, 1999)/1000.0 - 1.0
+        theta     = random.randint(0,  399)/1000.0 - 0.2
+        theta_dot = random.randint(0, 2999)/1000.0 - 1.5
+        print "Initial conditions:"
+        print "%2.4f   %2.4f   %2.4f   %2.4f" %(x, x_dot, theta, theta_dot)
+    else:
+        x, x_dot, theta, theta_dot = test
         #x = 0.0
         #x_dot = 0.0
         #theta = 0.0
@@ -104,12 +110,19 @@ def evaluate_individual(phenotype, **kwargs):
                           dtype = float)
         # maps into cc [0,.1]
         inputs *= .1
+        for i in range(len(inputs)):
+                if inputs[i] > .1:
+                        inputs[i] = .1
+                elif inputs[i] < 0:
+                        inputs[i] = .0
 
         # a normalizacao so acontece para estas condicoes iniciais
         # nada garante que a evolucao do sistema leve a outros
         # valores de x, x_dot e etc...
+        #print inputs
         phenotype.nstepsim(kwargs['simtime'],*inputs)
-        output = np.sum(np.gradient(phenotype.effectorhist[0][leftlim:]))
+        output = np.sum(np.gradient(phenotype.effectorhist[0][leftlim-1:]))
+        #print output
         # Apply action to the simulated cart-pole
         #if no cc change then repeat last
         if abs(output) <= 1e-20:
@@ -130,7 +143,7 @@ def evaluate_individual(phenotype, **kwargs):
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
-    #plotindividual(phenotype,**kwargs)
+    plotindividual(phenotype,**kwargs)
     return num_steps/fitness - 1
 
 if __name__ == "__main__":
