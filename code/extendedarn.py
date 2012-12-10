@@ -86,9 +86,10 @@ def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
                                                        (int(genesize)+
                                                         promsize )),
                        gene_index)
+    #NOTE: non-overlapping genes
     proms = reduce(lambda indxlst, indx:
                    indxlst + [indx] if(indx-indxlst[-1] >= promsize
-                             + (32-promsize)) else indxlst,
+                                       + (32-promsize) + genesize + 64) else indxlst,
                    promlist,
                    [0])
     return proms[1:]
@@ -117,14 +118,14 @@ def getbindings(bindtype, proteins, match_threshold,**kwargs):
 
 def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
     #s = clock()
-    time = 0
+    time = 1
     nump = arnet.numtf
     numsamples = 1
     numrec = arnet.numrec
     numeff = arnet.numeff
 
     #print kwargs['inputs']
-    while time < simtime:
+    while time <= simtime:
         for i in range(numrec):
             arnet.ccs[nump+i] = kwargs['inputs'][i]
 
