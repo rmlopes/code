@@ -31,8 +31,8 @@ if __name__ == '__main__':
     p = CellProb(single_pole.evaluate_individual, 4, 1)
     p.eval_ = bindparams(cfg, p.eval_)
 
-    f = open(sys.argv[1], 'r')
-    genome = BitStream(bin=f.readline())
+    f = open(sys.argv[1]+os.getenv('SGE_TASK_ID')+'.dot', 'r')
+    genome = BitStream(bin=f.readlines()[-1])
     cell = Cell(cfg, genome, problem = p)
 
     testportions = [.05, .275, .5, .725, .95]
