@@ -35,6 +35,7 @@ POLEMASS_LENGTH = (MASSPOLE * LENGTH)
 FORCE_MAG = 10.0
 TAU = 0.02  # seconds between state updates
 FOURTHIRDS = 1.3333333333333
+TWELVE_DEGREES = 0.2094384 #radians
 
 def cart_pole(net_output, x, x_dot, theta, theta_dot):
     ''' Directly copied from Stanley's C++ source code '''
@@ -63,7 +64,7 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
 
 def evaluate_individual(phenotype, test = None, **kwargs):
 
-    twelve_degrees = 0.2094384 #radians
+   #radians
     #Nicolau et al. 2010
     if not test:
         num_steps = 120000 #10**5
@@ -105,7 +106,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         inputs = np.array([(x + 2.4)/4.8,
                            (x_dot + 1.0)/2.0,
                            #(theta + twelve_degrees)/0.41,
-                           (theta + twelve_degrees)/( 2*twelve_degrees),
+                           (theta + TWELVE_DEGREES)/( 2*TWELVE_DEGREES),
                            (theta_dot + 1.5)/3.0],
                           dtype = float)
         # maps into cc [0,.1]
@@ -136,7 +137,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         #RL-NOTE: original does not check for the speed boundaries
         # Problem description in Nicoulau et al. 2010 shows closed
         # intervals (>= should be >)
-        if (abs(x) >= 2.4 or abs(theta) >= twelve_degrees):
+        if (abs(x) >= 2.4 or abs(theta) >= TWELVE_DEGREES):
             #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
             # the cart/pole has run/inclined out of the limits
             break
@@ -144,7 +145,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
     plotindividual(phenotype,**kwargs)
-    return num_steps/fitness - 1
+    return num_steps/float(fitness) - 1
 
 if __name__ == "__main__":
     evalf = partial(evaluate_individual)
