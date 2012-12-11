@@ -39,10 +39,10 @@ def nn(inputs, input_weights, hidden_weights, output_weights):
         K,Z,Y = [],[],[]
         for i in range(hidenum):
             K.append(sigmoid(inputs, input_weights[:,i]))
-        for i in range(hidenum):
-            Z.append(sigmoid(K, hidden_weights[:,i]))
+        #for i in range(hidenum):
+         #   Z.append(sigmoid(K, hidden_weights[:,i]))
         for i in range(outnum):
-            Y.append(sigmoid(Z,output_weights[:,i]))
+            Y.append(sigmoid(K,output_weights[:,i]))
         return Y
 
 def sigmoid(inputs,weights):
