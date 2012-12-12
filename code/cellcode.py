@@ -2,7 +2,7 @@ import ConfigParser, os
 import logging
 import random
 import numpy as np
-import extendedarn as arn
+#import extendedarn as arn
 from evodevo import Agent
 from numpy import array as nparray
 from functools import partial
@@ -13,8 +13,11 @@ from sys import stdout
 from subprocess import call
 from utils import *
 from utils.bitstrutils import *
-from extendedarn import *
-
+#testing miguel's approach implies importing arnmiguel instead'
+#delegated to main import order (cellcode must be imported after the
+#arn module)
+#from extendedarn import *
+from arnmiguel import *
 
 log = logging.getLogger(__name__)
 
@@ -35,11 +38,11 @@ class Cell(Agent):
         fitness = None
         def __init__(self, config, gcode = None, parentfit = 1e4, **kwargs):
             Agent.__init__(self, parentfit)
-            generator = arn.bindparams(config, arn.generatechromo)
+            generator = bindparams(config, generatechromo)
             if gcode == None:
                     gcode = generator()
 
-            self.genotype = arn.ARNetwork(gcode, config, **kwargs)
+            self.genotype = ARNetwork(gcode, config, **kwargs)
             #because now the phenotype is expressed at
             #evaluatiuon time
             self.phenotype = self.genotype
@@ -48,7 +51,7 @@ class Cell(Agent):
                    self.phenotype.numrec == 0 or
                    self.phenotype.numtf == 0):
                 gcode = generator()
-                self.genotype = arn.ARNetwork(gcode, config, **kwargs)
+                self.genotype = ARNetwork(gcode, config, **kwargs)
                 self.phenotype = self.genotype
 
             #initialize phenotype
