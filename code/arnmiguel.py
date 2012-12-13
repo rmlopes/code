@@ -258,6 +258,7 @@ class ARNetwork:
 
         self.simfun = bindparams(config,iterate)
         self.delta = config.getfloat('default','delta')
+        self.output_idx = 0
 
     def _initializebindings(self, pbindfun):
         self.ebindings = pbindfun(0, self.proteins  + self.receptors +
@@ -265,11 +266,11 @@ class ARNetwork:
         self.ibindings = pbindfun(1, self.proteins + self.receptors +
                                   self.effectors)
 
-        #effectors and dummy receptors do not regulate
-        #if self.effectors or self.receptors:
-         #       self.ebindings = self.ebindings[:self.numtf+self.numrec,:]
+        #effectors do not regulate
+        if self.effectors:
+                self.ebindings = self.ebindings[:self.numtf+self.numrec,:]
                 #print 'ebinds: ', self.ebindings.shape
-          #      self.ibindings = self.ibindings[:self.numtf+self.numrec,:]
+                self.ibindings = self.ibindings[:self.numtf+self.numrec,:]
                 #print 'ibinds: ', self.ibindings.shape
 
     def _initializeweights(self, weightsfun):
@@ -334,7 +335,7 @@ if __name__ == '__main__':
         cfg.readfp(open(arnconfigfile))
         proteins=[]
         nump = 0
-        prob_inp=[.0,.0,.0]
+        prob_inp=[.0,.0,.0,.0]
         try:
             f = open(sys.argv[1], 'r')
             genome = BitStream(bin=f.readline())

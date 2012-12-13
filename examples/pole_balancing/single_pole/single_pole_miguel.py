@@ -91,63 +91,79 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         #theta = 0.0
         #theta_dot = 0.0
 
-    fitness = 0
+    bestfit = 0
     leftlim =  -(1.0 / kwargs['samplerate'])
     last = .0
-    for trials in xrange(num_steps):
+    orig_x, orig_x_dot, orig_theta, orig_theta_dot = x, x_dot, theta,theta_dot
+    orig_state = phenotype.ccs
+    print 'Number of effectors is: ', len(phenotype.effectors)
+    for oidx in range(len(phenotype.effectors)):
+        fitness = 0
+        phenotype.reset(orig_state)
+        x, x_dot, theta, theta_dot = orig_x, orig_x_dot, orig_theta, orig_theta_dot
+        for trials in xrange(num_steps):
 
-        # maps into [0,1]
-        # RL-NOTE: x_dot and theta_dot may go outside the defined
-        # boundaries: how to normalize then?
-        # modified to match Nicolau et al 2010 description.
-        #inputs = np.array([(x + 2.4)/4.8,
-        #                   (x_dot + 0.75)/1.5,
-        #                   (theta + twelve_degrees)/0.41,
-        #                   (theta_dot + 1.0)/2.0],
-        #                  dtype = float)
-        inputs = np.array([(x + 2.4)/4.8,
-                           (x_dot + 1.0)/2.0,
-                           #(theta + twelve_degrees)/0.41,
-                           (theta + TWELVE_DEGREES)/( 2*TWELVE_DEGREES),
-                           (theta_dot + 1.5)/3.0],
-                          dtype = float)
-        # maps into cc [0,.1]
-        inputs *= .1
-        for i in range(len(inputs)):
+            # maps into [0,1]
+            # RL-NOTE: x_dot and theta_dot may go outside the defined
+            # boundaries: how to normalize then?
+            # modified to match Nicolau et al 2010 description.
+            #inputs = np.array([(x + 2.4)/4.8,
+            #                   (x_dot + 0.75)/1.5,
+            #                   (theta + twelve_degrees)/0.41,
+            #                   (theta_dot + 1.0)/2.0],
+            #                  dtype = float)
+            inputs = np.array([(x + 2.4)/4.8,
+                               (x_dot + 1.0)/2.0,
+                               #(theta + twelve_degrees)/0.41,
+                               (theta + TWELVE_DEGREES)/( 2*TWELVE_DEGREES),
+                               (theta_dot + 1.5)/3.0],
+                              dtype = float)
+            # maps into cc [0,.1]
+            inputs *= .1
+            for i in range(len(inputs)):
                 if inputs[i] > .1:
                         inputs[i] = .1
                 elif inputs[i] < 0:
                         inputs[i] = .0
 
-        # a normalizacao so acontece para estas condicoes iniciais
-        # nada garante que a evolucao do sistema leve a outros
-        # valores de x, x_dot e etc...
-        #print inputs
-        phenotype.nstepsim(kwargs['simtime'],*inputs)
-        output = np.sum(np.gradient(phenotype.effectorhist[0][leftlim-1:]))
-        #print output
-        # Apply action to the simulated cart-pole
-        #if no cc change then repeat last
-        if abs(output) <= 1e-20:
-            output = last
-        x, x_dot, theta, theta_dot = cart_pole(output, x, x_dot, theta, theta_dot)
+            # a normalizacao so acontece para estas condicoes iniciais
+            # nada garante que a evolucao do sistema leve a outros
+            # valores de x, x_dot e etc...
+            #print inputs
+            phenotype.nstepsim(kwargs['simtime'],*inputs)
+            output = phenotype.effectorhist[oidx][-1] - phenotype.effectorhist[oidx][-2]
+            #print output
+            # Apply action to the simulated cart-pole
+            #if no cc change then repeat last
+            if abs(output) <= 1e-20:
+                output = last
+            x, x_dot, theta, theta_dot = cart_pole(output, x, x_dot, theta, theta_dot)
 
-        # Check for failure.  If so, return steps
-        # the number of steps indicates the fitness: higher = better
-        fitness += 1
-        last = output
-        #RL-NOTE: original does not check for the speed boundaries
-        # Problem description in Nicoulau et al. 2010 shows closed
-        # intervals (>= should be >)
-        if (abs(x) >= 2.4 or abs(theta) >= TWELVE_DEGREES):
-            #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
-            # the cart/pole has run/inclined out of the limits
-            break
+            # Check for failure.  If so, return steps
+            # the number of steps indicates the fitness: higher = better
+            last = output
+            #RL-NOTE: original does not check for the speed boundaries
+            # Problem description in Nicoulau et al. 2010 shows closed
+            # intervals (>= should be >)
+            if (abs(x) >= 2.4 or abs(theta) >= TWELVE_DEGREES):
+                #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
+                # the cart/pole has run/inclined out of the limits
+                break
+            fitness += 1
+        if fitness > bestfit:
+            bestfit = fitness
+            phenotype.output_idx = oidx
+            print "output index is now: ",oidx
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
     plotindividual(phenotype,**kwargs)
-    return num_steps/float(fitness) - 1
+    if bestfit == 0:
+            bestfit == 1
+    try:
+        return num_steps/float(bestfit) - 1
+    except ZeroDivisionError:
+        print bestfit
 
 if __name__ == "__main__":
     evalf = partial(evaluate_individual)

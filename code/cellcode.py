@@ -36,6 +36,7 @@ class Cell(Agent):
         phenotype = None
         genotype = None
         fitness = None
+
         def __init__(self, config, gcode = None, parentfit = 1e4, **kwargs):
             Agent.__init__(self, parentfit)
             generator = bindparams(config, generatechromo)
@@ -48,7 +49,7 @@ class Cell(Agent):
             self.phenotype = self.genotype
             #self.phenotype = arn.ARNetwork(gcode,config)
             while (self.phenotype.numeff == 0 or
-                   self.phenotype.numrec == 0 or
+                   #self.phenotype.numrec == 0 or
                    self.phenotype.numtf == 0):
                 gcode = generator()
                 self.genotype = ARNetwork(gcode, config, **kwargs)
