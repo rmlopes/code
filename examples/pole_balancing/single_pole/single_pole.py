@@ -36,6 +36,7 @@ FORCE_MAG = 10.0
 TAU = 0.02  # seconds between state updates
 FOURTHIRDS = 1.3333333333333
 TWELVE_DEGREES = 0.2094384 #radians
+ONEANDHALF_DEGREES = 0.02618 #radians
 
 def cart_pole(net_output, x, x_dot, theta, theta_dot):
     ''' Directly copied from Stanley's C++ source code '''
@@ -52,7 +53,7 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
     thetaacc = (GRAVITY*sintheta - costheta*temp)\
                /(LENGTH * (FOURTHIRDS - MASSPOLE * costheta * costheta/TOTAL_MASS))
 
-    xacc  = temp - POLEMASS_LENGTH * thetaacc * costheta / TOTAL_MASS
+    xacc  = (temp - POLEMASS_LENGTH * thetaacc * costheta) / TOTAL_MASS
 
     #Update the four state variables, using Euler's method
     x         += TAU * x_dot

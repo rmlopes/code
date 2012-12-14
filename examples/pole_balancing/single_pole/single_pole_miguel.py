@@ -18,6 +18,7 @@ from code.utils.mathlogic import *
 from code.arnmiguel import *
 from code.cellcode import *
 import sys
+from single_pole import cart_pole
 
 rstate = random.getstate()
 save = open('rstate','w')
@@ -38,31 +39,6 @@ FORCE_MAG = 10.0
 TAU = 0.02  # seconds between state updates
 FOURTHIRDS = 1.3333333333333
 TWELVE_DEGREES = 0.2094384 #radians
-
-def cart_pole(net_output, x, x_dot, theta, theta_dot):
-    ''' Directly copied from Stanley's C++ source code '''
-    if net_output > .0:
-        force = FORCE_MAG
-    else:
-        force = -FORCE_MAG
-
-    costheta = math.cos(theta)
-    sintheta = math.sin(theta)
-
-    temp = (force + POLEMASS_LENGTH * theta_dot * theta_dot * sintheta)/ TOTAL_MASS
-
-    thetaacc = (GRAVITY*sintheta - costheta*temp)\
-               /(LENGTH * (FOURTHIRDS - MASSPOLE * costheta * costheta/TOTAL_MASS))
-
-    xacc  = temp - POLEMASS_LENGTH * thetaacc * costheta / TOTAL_MASS
-
-    #Update the four state variables, using Euler's method
-    x         += TAU * x_dot
-    x_dot     += TAU * xacc
-    theta     += TAU * theta_dot
-    theta_dot += TAU * thetaacc
-
-    return x, x_dot, theta, theta_dot
 
 def evaluate_individual(phenotype, test = None, **kwargs):
 
@@ -91,7 +67,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         #theta = 0.0
         #theta_dot = 0.0
 
-    bestfit = 0
+    bestfit = 1
     leftlim =  -(1.0 / kwargs['samplerate'])
     last = .0
     orig_x, orig_x_dot, orig_theta, orig_theta_dot = x, x_dot, theta,theta_dot
@@ -145,11 +121,11 @@ def evaluate_individual(phenotype, test = None, **kwargs):
             #RL-NOTE: original does not check for the speed boundaries
             # Problem description in Nicoulau et al. 2010 shows closed
             # intervals (>= should be >)
+            fitness += 1
             if (abs(x) >= 2.4 or abs(theta) >= TWELVE_DEGREES):
                 #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
                 # the cart/pole has run/inclined out of the limits
                 break
-            fitness += 1
         if fitness > bestfit:
             bestfit = fitness
             phenotype.output_idx = oidx
@@ -160,10 +136,8 @@ def evaluate_individual(phenotype, test = None, **kwargs):
     plotindividual(phenotype,**kwargs)
     if bestfit == 0:
             bestfit == 1
-    try:
-        return num_steps/float(bestfit) - 1
-    except ZeroDivisionError:
-        print bestfit
+
+    return num_steps/float(bestfit) - 1
 
 if __name__ == "__main__":
     evalf = partial(evaluate_individual)

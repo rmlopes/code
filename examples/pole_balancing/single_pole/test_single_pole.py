@@ -43,12 +43,12 @@ if __name__ == '__main__':
     assert len(inputs) == 625
     results = []
     for i in inputs:
-        print i
         fit = p.eval_(cell.phenotype, i)
         if fit < 0.000000001:
             results.append(0)
         else:
             results.append(1)
+        print i, ' ', fit
      #print "\nInitial conditions:"
      #print "%2.4f   %2.4f   %2.4f   %2.4f" %tuple(init)
 
