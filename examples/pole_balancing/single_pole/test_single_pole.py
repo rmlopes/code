@@ -55,7 +55,7 @@ if __name__ == '__main__':
     rstr = ''
     for i in range(len(results)):
         rstr = rstr + str(results[i]) + ' '
-        if (i+1) % 5 == 0:
+        if (i+1) % pow(5,2) == 0:
             rstr = rstr + '\n'
     print rstr
 
