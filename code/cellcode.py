@@ -14,8 +14,9 @@ from subprocess import call
 from utils import *
 from utils.bitstrutils import *
 #testing miguel's approach implies importing arnmiguel instead'
-#delegated to main import order (cellcode must be imported after the
-#arn module)
+#delegated to main import order (cellcode would be imported after the
+#arn module but it doesn not work like that, must be delegated to
+#config file)
 #from extendedarn import *
 from arnmiguel import *
 
@@ -36,7 +37,6 @@ class Cell(Agent):
         phenotype = None
         genotype = None
         fitness = None
-
         def __init__(self, config, gcode = None, parentfit = 1e4, **kwargs):
             Agent.__init__(self, parentfit)
             generator = bindparams(config, generatechromo)
@@ -67,6 +67,8 @@ class Cell(Agent):
         def setARN(self, arn):
                 self.arn = arn
 
+TFACTORS = 0
+STRUCTS = 1
 def plotindividual(arnet, **kwargs):
         displayARNresults(arnet.proteins, arnet.cchistory,
                           kwargs['samplerate'], temp=0,
@@ -78,23 +80,26 @@ def plotindividual(arnet, **kwargs):
                           temp = 1, extralabels = extralabels,
                           figure=STRUCTS)
 
+#simplify this to the difference between final and start cc
+#(where samplerate=1.0)
 def getbinaryoutput(arn, **kwargs):
         index = 0
         gradientsum = []
         leftlim =  -(1.0 / kwargs['samplerate'])
-        output = np.sum(np.gradient(arn.effectorhist[index][leftlim:]))
+        output = (arn.effectorhist[index][-1] -
+                  arn.effectorhist[index][leftlim-1])
         return 0 if output > 0 else 1
 
 def getoutputp0p1(arn, **kwargs):
         index = 0
         leftlim =  -(1.0 / kwargs['samplerate'])
-        g1 = np.sum(np.gradient(arn.effectorhist[index][leftlim:]))
+        g1 = np.sum(np.gradient(arn.effectorhist[index][leftlim-1:]))
 
         try:
-                g2 = np.sum(np.gradient(arn.effectorhist[index + 1][leftlim:]))
+                g2 = np.sum(np.gradient(arn.effectorhist[index + 1][leftlim-1:]))
         except IndexError: return 0
 
-        return 1 if g2 >= g1 else 0
+        return 1 if g2 > g1 else 0
 
 #TODO: move this inside the problem
 def evaluatecircuit(phenotype, test = False, **kwargs):

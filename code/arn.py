@@ -75,10 +75,10 @@ def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
                        int(excite_offset) <= index <  (genome.length-(int(genesize)+promsize )),
                        gene_index)
     proms = reduce(lambda indxlst, indx:
-                   indxlst + [indx] if(indx-indxlst[-1] >= 32) else indxlst,
-                   promlist,
-                   [0])
-    return proms[1:]
+                   indxlst + [indx] if indx-indxlst[-1] >= 32 + genesize + 64 else indxlst,
+                   promlist[1:],
+                   promlist[:1])
+    return proms
 
 def buildproducts(genome, promlist, excite_offset, promoter,
                   genesize, bindingsize, proteinsize, **kwargs):
@@ -284,7 +284,7 @@ def generatechromoepi(init_dm, dm_mutrate,**bindargs):
     return (genome,dict(zip(promlist,proteins)),
             dict(zip(promlist,cromatines)),10000,0)
 
-
+#deprecated
 def buildpromlistEPI(genome, excite_offset, genesize, promoter):
     gene_index = genome.findall(promoter)
     promsize = len(promoter)
@@ -296,35 +296,3 @@ def buildpromlistEPI(genome, excite_offset, genesize, promoter):
                    promlist,
                    [0])
     return proms[1:]
-
-#individual is (genome,proteindict,[epigenome])
-#deprecated
-def simulate(individual, bindingsize, proteinsize, genesize, promoter,
-             excite_offset, match_threshold, beta, delta,
-             samplerate, simtime, simstep, silentmode):
-    #genome,proteins,epig,lf,inactive = individual
-    #MODIFIED
-    #promlist = epig.keys()#buildpromlist(genome, excite_offset,genesize,promoter)
-    promlist = individual[1].keys()
-    proteins = individual[1].values()
-    threshold = match_threshold
-
-    if promlist and simtime > 0:
-            excite_weights = getweights(0, proteins, threshold,
-                                        bindingsize, beta)
-            inhibit_weights = getweights(1, proteins, threshold,
-                                         bindingsize, beta)
-            initccs = [1.0/len(proteins)]*len(proteins)
-            ccs=nparray(initccs)
-            iterate(proteins, ccs, excite_weights, inhibit_weights,
-                    samplerate,simtime, silentmode,simstep, delta)
-
-    return proteins
-
-#organized in columns for the target equation
-#deprecated
-def getweights(bindtype, proteins, threshold, bindsize,beta):
-    bindings = getbindings(bindtype, proteins, threshold, bindsize)
-    bindings -= bindsize
-    bindings *= beta
-    return np.exp(bindings)

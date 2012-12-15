@@ -12,6 +12,9 @@ from subprocess import call
 from utils import *
 from utils.bitstrutils import *
 from time import clock
+from arn import bindparams, generatechromo, buildpromlist, \
+    buildproducts, getbindings, _getweights, _getSignalArray
+
 try:
     import matplotlib.pyplot as plt
     from matplotlib import collections, legend
@@ -22,8 +25,29 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
+def displayARNresults(proteins, ccs,
+                      samplerate=.001, temp = 0,extralabels=None,**kwargs):
+    log.warning('Plotting simulation results for ' +
+                str(len(proteins)) + ' genes/proteins')
+    #plt.figure(kwargs['figure'])
+    plt.clf()
+    xx = nparray(range(ccs.shape[1]))
+    if extralabels:
+        for i in range(len(proteins)):
+            plt.plot(xx, ccs[i],label="%s%i"%(extralabels[i],proteins[i][0],))
+            plt.legend()
+
+    else:
+        for i in range(len(proteins)):
+            plt.plot(xx, ccs[i])
+    plt.savefig('ccoutput_' + str(temp) + '.png')
+    #plt.show()
+    #call(["open",'ccoutput_' + str(temp) + '.png'])
+
+
+'''
 def bindparams(config,fun):
-    '''Binds the ARN configuration file parameters to a function.'''
+    #Binds the ARN configuration file parameters to a function.
     return partial(fun,
                    bindingsize = config.getint('default','bindingsize'),
                    proteinsize = config.getint('default','proteinsize'),
@@ -42,10 +66,10 @@ def bindparams(config,fun):
 
 def generatechromo(initdm, mutratedm, genesize,
                    promoter, excite_offset, **bindargs):
-    '''
-    Default function to generate an ARN chromosome.
-    To be used with bindparams.
-    '''
+   #
+   # Default function to generate an ARN chromosome.
+   # To be used with bindparams.
+   #
     valid = False
     while not 48 > valid >= 4:
         genome = BitStream(float=random.random(),length=32);
@@ -55,28 +79,6 @@ def generatechromo(initdm, mutratedm, genesize,
         valid = len(promlist)
 
     return genome
-
-TFACTORS = 0
-STRUCTS = 1
-
-def displayARNresults(proteins, ccs,
-                      samplerate=.001, temp = 0,extralabels=None,**kwargs):
-    log.warning('Plotting simulation results for ' +
-                str(len(proteins)) + ' genes/proteins')
-    #plt.figure(kwargs['figure'])
-    plt.clf()
-    xx = nparray(range(ccs.shape[1]))
-    if extralabels:
-        for i in range(len(proteins)):
-            plt.plot(xx, ccs[i],label="%s%i"%(extralabels[i],proteins[i][0],))
-        plt.legend()
-
-    else:
-        for i in range(len(proteins)):
-            plt.plot(xx, ccs[i])
-    plt.savefig('ccoutput_' + str(temp) + '.png')
-    #plt.show()
-    #call(["open",'ccoutput_' + str(temp) + '.png'])
 
 def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
     gene_index = genome.findall(BitStream(bin=promoter))
@@ -88,8 +90,7 @@ def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
                        gene_index)
     #NOTE: non-overlapping genes
     proms = reduce(lambda indxlst, indx:
-                   indxlst + [indx] if(indx-indxlst[-1] >= promsize
-                                       + (32-promsize) + genesize + 64) else indxlst,
+                   indxlst + [indx] if(indx-indxlst[-1] >= 32 + genesize + 64) else indxlst,
                    promlist,
                    [0])
     return proms[1:]
@@ -114,7 +115,7 @@ def buildproducts(genome, promlist, excite_offset, promoter,
 def getbindings(bindtype, proteins, match_threshold,**kwargs):
     return nparray([[XORmatching(p[3],otherps[1+bindtype],match_threshold)
                          for otherps in proteins]
-                        for p in proteins],dtype=float);
+                        for p in proteins],dtype=float);'''
 
 def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
     #s = clock()
@@ -175,6 +176,7 @@ def _update(proteins, ccs, exciteweights, inhibitweights,delta,**kwargs):
     ccs[numreg:] += deltas[numreg:]
     #ccs/=total
 
+'''
 def _getSignalArray(ccs, weightstable):
     return 1.0/len(ccs) * np.dot(ccs,weightstable)
 
@@ -200,7 +202,7 @@ def _getweights(bindings, bindingsize, beta, **kwargs):
     weights = bindings - bindingsize
     weights *= beta
     return np.exp(weights)
-
+'''
 
 class ARNetwork:
     def __init__(self, gcode, config, **kwargs):

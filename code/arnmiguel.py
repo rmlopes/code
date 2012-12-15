@@ -12,101 +12,12 @@ from subprocess import call
 from utils import *
 from utils.bitstrutils import *
 from time import clock
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib import collections, legend
-except ImportError:
-    logging.warning('matplotlib not found.')
-    logging.warning('use of silentmode = 0 will result in an error...')
+from arn import bindparams, generatechromo, buildpromlist, \
+    buildproducts, getbindings, _getweights, _getSignalArray
+from extendedarn import displayARNresults
 
 log = logging.getLogger(__name__)
 
-
-def bindparams(config,fun):
-    '''Binds the ARN configuration file parameters to a function.'''
-    return partial(fun,
-                   bindingsize = config.getint('default','bindingsize'),
-                   proteinsize = config.getint('default','proteinsize'),
-                   genesize = config.getint('default','genesize'),
-                   promoter = config.get('default','promoter'),
-                   excite_offset = config.getint('default','excite_offset'),
-                   match_threshold = config.getint('default','match_threshold'),
-                   beta = config.getfloat('default','beta'),
-                   delta = config.getfloat('default','delta'),
-                   samplerate = config.getfloat('default','samplerate'),
-                   simtime = config.getint('default','simtime'),
-                   simstep = config.getint('default','simstep'),
-                   silentmode = config.getboolean('default','silentmode'),
-                   initdm = config.getint('default','initdm'),
-                   mutratedm = config.getfloat('default','mutratedm'))
-
-def generatechromo(initdm, mutratedm, genesize,
-                   promoter, excite_offset, **bindargs):
-    '''
-    Default function to generate an ARN chromosome.
-    To be used with bindparams.
-    '''
-    valid = False
-    while not 48 > valid >= 4:
-        genome = BitStream(float=random.random(),length=32);
-        for i in range(0,initdm):
-            genome = dm_event(genome, mutratedm)
-        promlist = buildpromlist(genome, excite_offset, genesize, promoter)
-        valid = len(promlist)
-
-    return genome
-
-TFACTORS = 0
-STRUCTS = 1
-
-def displayARNresults(proteins, ccs,
-                      samplerate=.001, temp = 0,extralabels=None,**kwargs):
-    log.warning('Plotting simulation results for ' +
-                str(len(proteins)) + ' genes/proteins')
-    #plt.figure(kwargs['figure'])
-    plt.clf()
-    xx = nparray(range(ccs.shape[1]))
-    if extralabels:
-        for i in range(len(proteins)):
-            plt.plot(xx, ccs[i],label="%s%i"%(extralabels[i],proteins[i][0],))
-        plt.legend()
-
-    else:
-        for i in range(len(proteins)):
-            plt.plot(xx, ccs[i])
-    plt.savefig('ccoutput_' + str(temp) + '.png')
-    #plt.show()
-    #call(["open",'ccoutput_' + str(temp) + '.png'])
-
-def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
-    gene_index = genome.findall(BitStream(bin=promoter))
-    promsize = len(promoter)
-    promlist = filter( lambda index:
-                       int(excite_offset) <= index <  (genome.length-
-                                                       (int(genesize)+
-                                                        promsize )),
-                       gene_index)
-    #NOTE: non-overlapping genes
-    proms = reduce(lambda indxlst, indx:
-                   indxlst + [indx] if(indx-indxlst[-1] >= 32 + genesize + 64) else indxlst,
-                   promlist,
-                   [0])
-    return proms[1:]
-
-def buildproducts(genome, promlist, excite_offset, promoter,
-                  genesize, bindingsize, proteinsize, **kwargs):
-     log.debug("Building ARN with " + str(len(promlist)) + " genes")
-    #each protein is
-    #[protein_index(=prom_index), e-bind, h-bind,
-    # bind-signature, function-signature ]
-     proteins = list()
-     for pidx in promlist:
-         proteins.append(_getprotein(pidx,
-                                     genome[pidx-excite_offset:pidx+genesize+len(promoter)],
-                                     bindingsize,
-                                     genesize,
-                                     proteinsize))
-     return proteins
 
 INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('0'*16 + '1'*16)),
@@ -121,12 +32,6 @@ def build_customproducts(signatures = INPUT_SIGNATURES):
         i += 1
     return products
 
-
-#organized in columns for the target equation
-def getbindings(bindtype, proteins, match_threshold,**kwargs):
-    return nparray([[XORmatching(p[3],otherps[1+bindtype],match_threshold)
-                         for otherps in proteins]
-                        for p in proteins],dtype=float);
 
 def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
     #s = clock()
@@ -186,33 +91,6 @@ def _update(proteins, ccs, exciteweights, inhibitweights,delta,**kwargs):
     ccs[:kwargs['numtf']] += deltas[:kwargs['numtf']]
     ccs[numreg:] += deltas[numreg:]
     #ccs/=total
-
-def _getSignalArray(ccs, weightstable):
-    return 1.0/len(ccs) * np.dot(ccs,weightstable)
-
-def _getprotein(idx, code, bind_size, gene_size, protein_size):
-    signature = BitStream(bin=
-                        applymajority(code[bind_size*3:bind_size*3+gene_size],
-                                      protein_size))
-    #EXTENDED version - Weak linkage (needs double size gene/proteins)
-    #p = [code[:self.bind_size],
-     #       code[self.bind_size:self.bind_size*2],
-      #      signature[0:self.bind_size],
-       #     signature[self.bind_size:self.protein_size]]
-    #ORIGINAL version
-    p = [idx,
-         code[:bind_size],
-         code[bind_size:bind_size*2],
-         signature,
-         signature]
-    log.debug(p)
-    return p
-
-def _getweights(bindings, bindingsize, beta, **kwargs):
-    weights = bindings - bindingsize
-    weights *= beta
-    return np.exp(weights)
-
 
 class ARNetwork:
     def __init__(self, gcode, config, **kwargs):
