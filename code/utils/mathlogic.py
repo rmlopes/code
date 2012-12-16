@@ -85,6 +85,31 @@ def sigmoid(x):
     except OverflowError:
         return 1.0
 
+#For creativity, centered u=0, with a = 1, sigma=.2
+def gaussian(*args):
+    if len(args) > 1:
+        x = sum(args)
+    else:
+        x = args[0]
+    try:
+        return exp(-(pow(x,2)/(2.0*pow(.2,2))))
+    except OverflowError:
+        return 1.0
+
+def identity(*args):
+    if len(args) > 1:
+        x = sum(args)
+    else:
+        x = args[0]
+    return x
+
+def symmetric(*args):
+    if len(args) > 1:
+        x = sum(args)
+    else:
+        x = args[0]
+    return (1.0 - x) if x > 0 else (1.0 + x)
+
 ### LOGIC ###
 def nand(in1, in2 = 1):
     result = not(and_(in1, in2))

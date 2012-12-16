@@ -65,12 +65,7 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
 
         if time % int(simtime*samplerate) == 0:
             log.debug('TIME: '+ str(time))
-            arnet.cchistory = np.column_stack((arnet.cchistory,
-                                               arnet.ccs[:nump]))
-            arnet.receptorhist = np.column_stack((arnet.receptorhist,
-                                                  arnet.ccs[nump:nump+numrec]))
-            arnet.effectorhist = np.column_stack((arnet.effectorhist,
-                                                  arnet.ccs[nump+numrec:]))
+            arnet.updatehistory()
         time+=simstep
 
     #print 'Elapsed time: %f sec.' % (clock()-s,)
@@ -162,13 +157,28 @@ class ARNetwork:
         self.receptorhist=nparray(self.ccs[self.numtf:self.numtf+self.numrec])
         self.effectorhist=nparray(self.ccs[self.numtf+self.numrec:])
 
+    def updatehistory(self):
+        nump = self.numtf
+        self.cchistory = np.column_stack((self.cchistory,
+                                          self.ccs[:nump]))
+        self.receptorhist = np.column_stack((self.receptorhist,
+                                             self.ccs[nump:nump+self.numrec]))
+        self.effectorhist = np.column_stack((self.effectorhist,
+                                             self.ccs[nump+self.numrec:]))
+
     def reset(self, cc_state = None):
+        self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
+                           (self.numtf+self.numeff+self.numrec))
         self._initializehistory()
-        if len(cc_state)==0:
-            self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
-                               (self.numtf+self.numeff+self.numrec))
-        else:
-            self.ccs = nparray(cc_state[:])
+        #FIXME: pickled ccs are not correct
+        #print cc_state
+        #self.updatehistory()
+        #self.nstepsim(self.simtime,*[.0,.0,.0,.0])
+        #print self.ccs
+        #if len(cc_state) == 0:
+
+        #else:
+           # self.ccs = nparray(cc_state[:])
 
 
     def __str__(self):

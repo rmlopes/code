@@ -11,45 +11,46 @@ from sys import stdout
 from subprocess import call
 from code.utils import *
 from code.utils.bitstrutils import *
-from code.extendedarn import *
+#from code.extendedarn import *
 from code.cellcode import *
+import cPickle as pickle
+#from code.arnmiguel import *
+
 
 log = logging.getLogger(__name__)
 
 
 if __name__ == '__main__':
-        arnconfigfile = 'configfiles/arnsim.cfg'
+        arnconfigfile = sys.argv[2]
+        #'configfiles/arnsim-miguel.cfg'
         log.setLevel(logging.DEBUG)
         cfg = ConfigParser.ConfigParser()
         cfg.readfp(open(arnconfigfile))
-        proteins=[]
-        nump = 0
-        prob_inp=[.0,.0,.0]
-        p = CellProb(evaluatecircuit, 3, 1)
-        try:
-            f = open(sys.argv[1], 'r')
-            genome = BitStream(bin=f.readline())
-            arnet = ARNetwork(genome, cfg, problem = p)
-        except:
-            while nump < 4 or nump > 32 or numeff == 0 or not arnet.receptors:
-                genome = BitStream(float=random.random(), length=32)
-                for i in range(cfg.getint('default','initdm')):
-                    genome = dm_event(genome,
-                                      .02)
+        evalfun = evaluatecircuit
+        #mapfun=getoutputp0p1)
+        p = CellProb(evalfun, 3, 1)
+        #try:
+            #genome = BitStream(bin=f.readline())
+            #arnet = ARNetwork(genome, cfg, problem = p)
+        c = pickle.load(open(sys.argv[1], 'r'))
+        c.reset()
+            #print arnet.proteins
+        #except:
+         #   print 'Failed to load test individual.'
 
-                    arnet = ARNetwork(genome, cfg,problem = p)
-                    nump = len(arnet.promlist)
-                    numeff = len(arnet.effectors)
-
-        eval_ = bindparams(cfg, evaluatecircuit)
-        plot_ = bindparams(cfg, plotindividual)
-        c = Cell(cfg,genome, problem = p )
-        i = 0
-        s = False
-        while True:
-                fit = eval_(c, True, shuffle = False)
+        p.eval_ = bindparams(cfg, evaluatecircuit)
+        p.plot_ = bindparams(cfg, plotindividual)
+        #c = Cell(cfg,genome, problem = p )
+        for i in range(2):
+                fit = p.eval_(c.phenotype, True, shuffle = False)
                 print 'FIT: ', fit
-                i += 1
+        p.plot_(c.phenotype)
+        for i in range(6):
+                fit = p.eval_(c.phenotype, True, shuffle = True)
+                print 'FIT: ', fit
+        while True:
+                fit = p.eval_(c.phenotype, True, shuffle = False)
+                print 'FIT: ', fit
         #fit = eval_(c, shuffle = False)
-        plot_(c.phenotype)
+        p.plot_(c.phenotype)
         print 'FIT: ', fit

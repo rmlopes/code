@@ -2,6 +2,7 @@ import ConfigParser, os
 import logging
 import random
 import numpy as np
+import copy
 #import extendedarn as arn
 from evodevo import Agent
 from numpy import array as nparray
@@ -58,14 +59,17 @@ class Cell(Agent):
             #initialize phenotype
             self.phenotype.nstepsim(config.getint('default','simtime'),
                                     *nparray(np.zeros(kwargs['problem'].ninp)))
+            #FIXME: this is not being used, 'cause there is a problem
+            #with the pickled ccs. Adopted the reset function below()
+            self.initstate = copy.deepcopy(self.phenotype.ccs)
             self.fitness = 1e9
 
         def __str__(self):
             return "### Agent ###\n%s\n%s: %f" % (self.arn,self.circuit,
                                                   self.fitness)
-
-        def setARN(self, arn):
-                self.arn = arn
+        def reset(self):
+            self.phenotype.reset()
+            self.phenotype.nstepsim(self.phenotype.simtime,*[.0,.0,.0,.0])
 
 TFACTORS = 0
 STRUCTS = 1
@@ -80,8 +84,6 @@ def plotindividual(arnet, **kwargs):
                           temp = 1, extralabels = extralabels,
                           figure=STRUCTS)
 
-#simplify this to the difference between final and start cc
-#(where samplerate=1.0)
 def getbinaryoutput(arn, **kwargs):
         index = 0
         gradientsum = []
@@ -110,12 +112,13 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
         n = 3
         ok=0
         intinps = range(pow(2,n))
-        #if not test:
-         #       intinps = intinps + intinps
+        if not test:
+                intinps = intinps[:]# + intinps[:]
         #random.shuffle(intinps)
         try:
                 if kwargs['shuffle']:
-                        random.shuffle(intinps)
+                    print 'Shuffling input cases...'
+                    random.shuffle(intinps)
         except KeyError: pass
 
         for i in intinps:

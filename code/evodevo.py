@@ -12,6 +12,7 @@ from utils import *
 from utils.bitstrutils import *
 from numpy import cumsum
 from abc import *
+import cPickle as pickle
 
 log = logging.getLogger(__name__)
 
@@ -232,8 +233,9 @@ class EvoDevoWorkbench:
                                                              circuit = self.best.phenotype),
                                                      self.problem)
                                         self.adfcount += 1
+                                #dump the complete agent
                                 self.circuitlog.critical(
-                                        self.problem.print_(self.best.phenotype))
+                                        pickle.dumps(self.best))
                                 log.info('Best:\n%s',
                                          self.problem.print_(self.best.phenotype))
 

@@ -273,12 +273,12 @@ class ARNetwork:
         self.effectorhist=nparray(self.ccs[self.numtf+self.numrec:])
 
     def reset(self, cc_state = None):
-        self._initializehistory()
         if len(cc_state)==0:
             self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
                                (self.numtf+self.numeff+self.numrec))
         else:
             self.ccs = nparray(cc_state[:])
+        self._initializehistory()
 
 
     def __str__(self):

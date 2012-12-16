@@ -65,6 +65,10 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
 
 def evaluate_individual(phenotype, test = None, **kwargs):
 
+    try:
+        outidx = kwargs['out']
+    except KeyError:
+        outidx = 0
    #radians
     #Nicolau et al. 2010
     if not test:
@@ -123,13 +127,18 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         # valores de x, x_dot e etc...
         #print inputs
         phenotype.nstepsim(kwargs['simtime'],*inputs)
-        output = np.sum(np.gradient(phenotype.effectorhist[0][leftlim-1:]))
+        #output =
+        # np.sum(np.gradient(phenotype.effectorhist[outidx][leftlim-1:]))
+        #NOTE: only valid for samplerate =1 .0
+        output = (phenotype.effectorhist[outidx][-1] -
+                  phenotype.effectorhist[outidx][-2])
         #print output
         # Apply action to the simulated cart-pole
         #if no cc change then repeat last
         if abs(output) <= 1e-20:
             output = last
-        x, x_dot, theta, theta_dot = cart_pole(output, x, x_dot, theta, theta_dot)
+        x, x_dot, theta, theta_dot = \
+            cart_pole(output, x, x_dot, theta, theta_dot)
 
         # Check for failure.  If so, return steps
         # the number of steps indicates the fitness: higher = better
@@ -145,7 +154,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
-    plotindividual(phenotype,**kwargs)
+    #plotindividual(phenotype,**kwargs)
     return num_steps/float(fitness) - 1
 
 if __name__ == "__main__":

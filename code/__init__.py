@@ -1,4 +1,10 @@
 import os
+import logging
+
+log = logging.getLogger(__name__)
+
+#log.info('importing WriteRotateFileHandler...')
+#from utils.filestuff import WriteRotateFileHandler
 
 __all__ = ['operators','evodevo','rencode','utils','arn']
 
