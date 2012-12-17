@@ -235,7 +235,7 @@ class EvoDevoWorkbench:
                                         self.adfcount += 1
                                 #dump the complete agent
                                 self.circuitlog.critical(
-                                        pickle.dumps(self.best))
+                                        pickle.dumps(self.best,2))
                                 log.info('Best:\n%s',
                                          self.problem.print_(self.best.phenotype))
 
