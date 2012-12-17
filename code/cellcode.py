@@ -85,7 +85,7 @@ def plotindividual(arnet, **kwargs):
                           figure=STRUCTS)
 
 def getbinaryoutput(arn, **kwargs):
-        index = 0
+        index = arn.output_idx
         gradientsum = []
         leftlim =  -(1.0 / kwargs['samplerate'])
         output = (arn.effectorhist[index][-1] -
@@ -121,7 +121,12 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
                     random.shuffle(intinps)
         except KeyError: pass
 
-        for i in intinps:
+        bestfit = 0
+        orig_state = phenotype.ccs[:]
+        for eff in range(phenotype.numeff):
+            ok = 0
+            phenotype.reset(orig_state)
+            for i in intinps:
                 inputs = BitStream(uint = i, length = n)
             #print inputs.bin
                 normalized = nparray([float(inputs.bin[i])
@@ -132,11 +137,14 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
                         #print 'OUT: ', out
                 if out == inputs[1+inputs[0]]:
                         ok += 1
-
+            if ok > bestfit:
+                bestfit = ok
+                phenotype.output_idx = eff
+                print 'output index is now ',eff
         #print 'SILENT: ', kwargs['silentmode']
         if not kwargs['silentmode']:
             plotindividual(phenotype,**kwargs)
-        return len(intinps) - ok
+        return len(intinps) - bestfit
 
 def evaluatewithreset(phenotype, test = False, **kwargs):
         mapfun = getbinaryoutput
