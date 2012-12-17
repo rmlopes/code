@@ -166,9 +166,12 @@ class ARNetwork:
         self.effectorhist = np.column_stack((self.effectorhist,
                                              self.ccs[nump+self.numrec:]))
 
-    def reset(self, cc_state = None):
-        self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
+    def reset(self, cc_state = []):
+        if len(cc_state) == 0:
+            self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
                            (self.numtf+self.numeff+self.numrec))
+        else:
+            self.ccs = cc_state
         self._initializehistory()
         #FIXME: pickled ccs are not correct
         #print cc_state
