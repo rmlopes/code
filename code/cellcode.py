@@ -94,6 +94,9 @@ def getbinaryoutput(arn, **kwargs):
 
 def getoutputp0p1(arn, **kwargs):
         index = 0
+        try:
+            index = kwargs['outidx']
+        except KeyError: pass
         leftlim =  -(1.0 / kwargs['samplerate'])
         g1 = np.sum(np.gradient(arn.effectorhist[index][leftlim-1:]))
 
@@ -122,10 +125,12 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
         except KeyError: pass
 
         bestfit = 0
+        bestout = 0
         orig_state = phenotype.ccs[:]
         for eff in range(phenotype.numeff):
             ok = 0
             phenotype.reset(orig_state)
+            phenotype.output_idx = eff
             for i in intinps:
                 inputs = BitStream(uint = i, length = n)
             #print inputs.bin
@@ -139,9 +144,10 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
                         ok += 1
             if ok > bestfit:
                 bestfit = ok
-                phenotype.output_idx = eff
-                print 'output index is now ',eff
+                bestout = eff
+                print 'best output index is now ',eff
         #print 'SILENT: ', kwargs['silentmode']
+        phenotype.output_idx = bestout
         if not kwargs['silentmode']:
             plotindividual(phenotype,**kwargs)
         return len(intinps) - bestfit
