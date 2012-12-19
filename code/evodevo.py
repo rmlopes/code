@@ -233,9 +233,13 @@ class EvoDevoWorkbench:
                                                              circuit = self.best.phenotype),
                                                      self.problem)
                                         self.adfcount += 1
-                                #dump the complete agent
-                                self.circuitlog.critical(
-                                        pickle.dumps(self.best,2))
+                                #NOTE: cannot pickle on python 2.6
+                                        #(issue 1398)
+                                #self.circuitlog.critical(
+                                 #       pickle.dumps(self.best,2))
+                                self.circuitlog.critical(pickle.dumps(
+                                        (self.best.genotype.code.bin,
+                                         self.best.phenotype.output_idx)))
                                 log.info('Best:\n%s',
                                          self.problem.print_(self.best.phenotype))
 
