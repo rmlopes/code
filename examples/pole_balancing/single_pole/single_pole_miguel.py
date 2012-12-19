@@ -71,8 +71,8 @@ def evaluate_individual(phenotype, test = None, **kwargs):
     leftlim =  -(1.0 / kwargs['samplerate'])
     last = .0
     orig_x, orig_x_dot, orig_theta, orig_theta_dot = x, x_dot, theta,theta_dot
-    orig_state = phenotype.ccs
-    print 'Number of effectors is: ', len(phenotype.effectors)
+    orig_state = copy.deepcopy(phenotype.ccs)
+    #    print 'Orginal state: ', orig_state
     for oidx in range(len(phenotype.effectors)):
         fitness = 0
         phenotype.reset(orig_state)

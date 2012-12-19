@@ -30,7 +30,7 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
         n = 3
         intinps = range(pow(2,n))
         if not test:
-                intinps = intinps[:] + intinps[:]
+                intinps = intinps[:]# + intinps[:]
         #random.shuffle(intinps)
         try:
                 if kwargs['shuffle']:
@@ -40,7 +40,8 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
 
         bestfit = 0
         bestout = 0
-        orig_state = phenotype.ccs[:]
+        orig_state = copy.deepcopy(phenotype.ccs)
+        #print 'ORIGINAL: ',orig_state
         if not test:
             for eff in range(phenotype.numeff):
                 phenotype.reset(orig_state)

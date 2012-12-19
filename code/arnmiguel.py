@@ -15,6 +15,7 @@ from time import clock
 from arn import bindparams, generatechromo, buildpromlist, \
     buildproducts, getbindings, _getweights, _getSignalArray
 from extendedarn import displayARNresults
+import copy
 
 log = logging.getLogger(__name__)
 
@@ -171,7 +172,11 @@ class ARNetwork:
             self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
                            (self.numtf+self.numeff+self.numrec))
         else:
-            self.ccs = cc_state
+            #NOTE: although some defend the use of [:] instead of
+            #deepcopy, even if it is a list of floats would only
+            #shallow copy, resulting in inconsistency
+            self.ccs = copy.deepcopy(cc_state)
+            #print 'reseting state to: ', cc_state
         self._initializehistory()
         #FIXME: pickled ccs are not correct
         #print cc_state

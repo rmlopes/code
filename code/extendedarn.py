@@ -277,7 +277,7 @@ class ARNetwork:
             self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
                                (self.numtf+self.numeff+self.numrec))
         else:
-            self.ccs = nparray(cc_state[:])
+            self.ccs = copy.deepcopy(cc_state)
         self._initializehistory()
 
 
