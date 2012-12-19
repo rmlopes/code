@@ -106,52 +106,6 @@ def getoutputp0p1(arn, **kwargs):
 
         return 1 if g2 > g1 else 0
 
-#TODO: move this inside the problem
-def evaluatecircuit(phenotype, test = False, **kwargs):
-        mapfun = getbinaryoutput
-        try:
-                mapfun = kwargs['mapfun']
-        except KeyError: pass
-        n = 3
-        ok=0
-        intinps = range(pow(2,n))
-        if not test:
-                intinps = intinps[:]# + intinps[:]
-        #random.shuffle(intinps)
-        try:
-                if kwargs['shuffle']:
-                    print 'Shuffling input cases...'
-                    random.shuffle(intinps)
-        except KeyError: pass
-
-        bestfit = 0
-        bestout = 0
-        orig_state = phenotype.ccs[:]
-        for eff in range(phenotype.numeff):
-            ok = 0
-            phenotype.reset(orig_state)
-            phenotype.output_idx = eff
-            for i in intinps:
-                inputs = BitStream(uint = i, length = n)
-            #print inputs.bin
-                normalized = nparray([float(inputs.bin[i])
-                                      for i in range(n)])
-                normalized *= .1
-                phenotype.nstepsim(kwargs['simtime'],*normalized)
-                out = mapfun(phenotype, **kwargs)
-                        #print 'OUT: ', out
-                if out == inputs[1+inputs[0]]:
-                        ok += 1
-            if ok > bestfit:
-                bestfit = ok
-                bestout = eff
-                print 'best output index is now ',eff
-        #print 'SILENT: ', kwargs['silentmode']
-        phenotype.output_idx = bestout
-        if not kwargs['silentmode']:
-            plotindividual(phenotype,**kwargs)
-        return len(intinps) - bestfit
-
 def evaluatewithreset(phenotype, test = False, **kwargs):
         mapfun = getbinaryoutput
         try:
