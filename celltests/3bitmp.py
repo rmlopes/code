@@ -12,16 +12,16 @@ from subprocess import call
 from code.utils import *
 from code.utils.bitstrutils import *
 #from code.extendedarn import *
-from code.cellcode import *
+from examples.cellmp import *
 import cPickle as pickle
-#from code.arnmiguel import *
+from code.arnmiguel import *
 
 
 log = logging.getLogger(__name__)
 
 
 if __name__ == '__main__':
-        arnconfigfile = sys.argv[2]
+        arnconfigfile = sys.argv[1]
         #'configfiles/arnsim-miguel.cfg'
         log.setLevel(logging.DEBUG)
         cfg = ConfigParser.ConfigParser()
@@ -32,11 +32,13 @@ if __name__ == '__main__':
         #try:
             #genome = BitStream(bin=f.readline())
             #arnet = ARNetwork(genome, cfg, problem = p)
-        c = pickle.load(open(sys.argv[1], 'r'))
-        c.reset()
-            #print arnet.proteins
-        #except:
-         #   print 'Failed to load test individual.'
+
+        f = open(sys.argv[2]+os.getenv('SGE_TASK_ID')+'.save', 'r')
+
+        (binstr,outidx) = pickle.load(f)
+        genome = BitStream(bin=binstr)
+        c = Cell(cfg, genome, problem = p)
+        c.phenotype.output_idx = outidx
 
         p.eval_ = bindparams(cfg, evaluatecircuit)
         p.plot_ = bindparams(cfg, plotindividual)
