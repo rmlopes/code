@@ -7,9 +7,10 @@ from sys import stdout
 from subprocess import call
 from code.utils import *
 from code.utils.bitstrutils import *
-from code.extendedarn import *
+from code.arnmiguel import *
 from code.cellcode import *
 from random import randint
+import cPickle as pickle
 
 
 TWELVE_DEGREES = 0.2094384 #radians
@@ -21,7 +22,7 @@ def factorstoinputs( factors ):
             (factors[3] * 3.0) - 1.5]
 
 if __name__ == '__main__':
-    arnconfigfile = sys.argv[2]
+    arnconfigfile = sys.argv[1]
     #'configfiles/arnsim-miguel.cfg'
     log.setLevel(logging.DEBUG)
     cfg = ConfigParser.ConfigParser()
@@ -32,11 +33,12 @@ if __name__ == '__main__':
     p = CellProb(single_pole.evaluate_individual, 4, 1)
     p.eval_ = bindparams(cfg, p.eval_)
 
-    f = open(sys.argv[1]+os.getenv('SGE_TASK_ID')+'.save', 'r')
-    #genome = BitStream(bin=f.readlines()[-1])
-    #cell = Cell(cfg, genome, problem = p)
-    cell = pickle.load(f)
-    cell.reset()
+    f = open(sys.argv[2]+os.getenv('SGE_TASK_ID')+'.save', 'r')
+
+    (binstr,outidx) = pickle.load(f)
+    genome = BitStream(bin=binstr)
+    cell = Cell(cfg, genome, problem = p)
+    cell.phenotype.output_idx = outidx
     testportions = [.05, .275, .5, .725, .95]
     inputsets = []
     import itertools
@@ -45,7 +47,7 @@ if __name__ == '__main__':
     assert len(inputs) == 625
     results = []
     for i in inputs:
-        fit = p.eval_(cell.phenotype, i, out = cell.output_idx)
+        fit = p.eval_(cell.phenotype, i)
         if fit < 0.000000001:
             results.append(0)
         else:

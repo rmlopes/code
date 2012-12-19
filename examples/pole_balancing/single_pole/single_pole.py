@@ -66,8 +66,8 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
 def evaluate_individual(phenotype, test = None, **kwargs):
 
     try:
-        outidx = kwargs['out']
-    except KeyError:
+        outidx = phenotype.output_idx
+    except AttributeError:
         outidx = 0
    #radians
     #Nicolau et al. 2010
