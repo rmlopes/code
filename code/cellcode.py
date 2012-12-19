@@ -67,6 +67,10 @@ class Cell(Agent):
         def __str__(self):
             return "### Agent ###\n%s\n%s: %f" % (self.arn,self.circuit,
                                                   self.fitness)
+
+        def pickled(self):
+            return (self.genotype.code.bin,self.phenotype.output_idx)
+
         def reset(self):
             self.phenotype.reset()
             self.phenotype.nstepsim(self.phenotype.simtime,*[.0,.0,.0,.0])

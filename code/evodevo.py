@@ -33,6 +33,9 @@ class Agent:
         def __init__(self, pfit):
                 self.parentfit = pfit
 
+        def pickled(self):
+            return self
+
 
 #Problem base for htis module
 class Problem:
@@ -238,8 +241,7 @@ class EvoDevoWorkbench:
                                 #self.circuitlog.critical(
                                  #       pickle.dumps(self.best,2))
                                 self.circuitlog.critical(pickle.dumps(
-                                        (self.best.genotype.code.bin,
-                                         self.best.phenotype.output_idx)))
+                                        self.best.pickled()))
                                 log.info('Best:\n%s',
                                          self.problem.print_(self.best.phenotype))
 
