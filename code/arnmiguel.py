@@ -56,11 +56,11 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
         arnet.ccs[:nump] /= sum(totparcels)
         #normalize outputs
         #FIXME: should this be done?
-        for i in range(numeff):
-            if arnet.ccs[-1-i] > 1.0:
-                arnet.ccs[-1-i] = 1.0
-            elif arnet.ccs[-1-i] < .0:
-                arnet.ccs[-1-i] = .0
+        #for i in range(numeff):
+        #    if arnet.ccs[-1-i] > 1.0:
+        #        arnet.ccs[-1-i] = 1.0
+        #    elif arnet.ccs[-1-i] < .0:
+        #        arnet.ccs[-1-i] = .0
         if numeff > 1:
             arnet.ccs[nump+numrec:] /= sum(arnet.ccs[nump+numrec:])
 
@@ -82,8 +82,8 @@ def _update(proteins, ccs, exciteweights, inhibitweights,delta,**kwargs):
 
     #NOTE: previous output concentration shall not be accounted for
     numreg = exciteweights.shape[0]
-    deltas[:numreg] *= ccs[:numreg]
     #NOTE: not touching receptors ccs
+    deltas[:kwargs['numtf']] *= ccs[:kwargs['numtf']]
     ccs[:kwargs['numtf']] += deltas[:kwargs['numtf']]
     ccs[numreg:] += deltas[numreg:]
     #ccs/=total

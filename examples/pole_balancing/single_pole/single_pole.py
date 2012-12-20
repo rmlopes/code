@@ -56,10 +56,11 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
     xacc  = (temp - POLEMASS_LENGTH * thetaacc * costheta) / TOTAL_MASS
 
     #Update the four state variables, using Euler's method
-    x         += TAU * x_dot
+    #RL-NOTE in my opinion the dots should be updated first
     x_dot     += TAU * xacc
-    theta     += TAU * theta_dot
+    x         += TAU * x_dot
     theta_dot += TAU * thetaacc
+    theta     += TAU * theta_dot
 
     return x, x_dot, theta, theta_dot
 
@@ -146,8 +147,8 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         last = output
         #RL-NOTE: original does not check for the speed boundaries
         # Problem description in Nicoulau et al. 2010 shows closed
-        # intervals (>= should be >)
-        if (abs(x) >= 2.4 or abs(theta) >= TWELVE_DEGREES):
+        # intervals
+        if (abs(x) > 2.4 or abs(theta) > TWELVE_DEGREES):
             #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
             # the cart/pole has run/inclined out of the limits
             break

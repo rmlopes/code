@@ -40,7 +40,6 @@ if __name__ == '__main__':
     cell = Cell(cfg, genome, problem = p)
     cell.phenotype.output_idx = outidx
     testportions = [.05, .275, .5, .725, .95]
-    inputsets = []
     import itertools
     perms = itertools.product(testportions,repeat = 4)
     inputs = map(factorstoinputs, perms)

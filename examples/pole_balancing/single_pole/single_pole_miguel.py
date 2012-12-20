@@ -120,9 +120,9 @@ def evaluate_individual(phenotype, test = None, **kwargs):
             last = output
             #RL-NOTE: original does not check for the speed boundaries
             # Problem description in Nicoulau et al. 2010 shows closed
-            # intervals (>= should be >)
+            # intervals
             fitness += 1
-            if (abs(x) >= 2.4 or abs(theta) >= TWELVE_DEGREES):
+            if (abs(x) > 2.4 or abs(theta) > TWELVE_DEGREES):
                 #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
                 # the cart/pole has run/inclined out of the limits
                 break
@@ -133,10 +133,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
-    plotindividual(phenotype,**kwargs)
-    if bestfit == 0:
-            bestfit == 1
-
+    #plotindividual(phenotype,**kwargs)
     return num_steps/float(bestfit) - 1
 
 if __name__ == "__main__":
