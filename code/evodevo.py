@@ -195,8 +195,8 @@ class EvoDevoWorkbench:
             return [self.agentclass(gcode = self.mutate_(o),
                                     parentfit = p1.fitness,
                                     problem = self.problem)
-                    for o in self.xover_(p1.genotype.code,
-                                         p2.genotype.code)]
+                    for o in self.xover_(p1,
+                                         p2)]
 
         def _create_mutant(self, parent):
             op_ = _selectop(self.ops_,self.oprates)

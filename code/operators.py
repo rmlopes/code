@@ -33,7 +33,9 @@ def delete(code, *args):
     return code
 
 ### for now just one point
-def twopoint_xover(code1,code2, *args):
+def twopoint_xover(p1,p2, *args):
+    code1 = p1.genotype.code
+    code2 = p2.genotype.code
     maxl = min(len(code1),len(code2))
     p = [int(random.random() * maxl)]
     p.append(int(random.random() * maxl))
@@ -43,14 +45,18 @@ def twopoint_xover(code1,code2, *args):
     o2 = BitStream(bin=(code2[:p1]+code1[p1:p2]+code2[p2:]).bin)
     return o1, o2
 
-def onepoint_xover(code1,code2,*args):
-        maxl = min(len(code1),len(code2))
-        p = int(random.random() * maxl)
-        o1 = BitStream(bin=(code1[:p]+code2[p:]).bin)
-        o2 = BitStream(bin=(code2[:p]+code1[p:]).bin)
-        return o1, o2
+def onepoint_xover(p1,p2,*args):
+    code1 = p1.genotype.code
+    code2 = p2.genotype.code
+    maxl = min(len(code1),len(code2))
+    p = int(random.random() * maxl)
+    o1 = BitStream(bin=(code1[:p]+code2[p:]).bin)
+    o2 = BitStream(bin=(code2[:p]+code1[p:]).bin)
+    return o1, o2
 
-def uniform_xover(code1, code2, *args):
+def uniform_xover(p1, p2, *args):
+    code1 = p1.genotype.code
+    code2 = p2.genotype.code
     l = min(len(code1),len(code2))
     mask = reduce(lambda x,y: "%s%s"%(x,y),
                  [int(round(random.random()))
