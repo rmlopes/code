@@ -41,7 +41,7 @@ class ReNCoDeAgent(Agent):
         fitness = None
         def __init__(self, config, problem, gcode = None, parentfit = 1e4):
                 Agent.__init__(self, parentfit)
-                generator = arn.bindparams(config, arn.generatechromo)
+                generator = arn.bindparams(config, self.generate)
                 if gcode == None:
                         gcode = generator()
 
@@ -53,6 +53,16 @@ class ReNCoDeAgent(Agent):
         def __str__(self):
                 return "### Agent ###\n%s\n%s: %f" % (self.arn,self.circuit,
                                                       self.fitness)
+
+class DMAgent(ReNCoDeAgent):
+        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+                self.generate = arn.generatechromo
+                ReNCoDeAgent.__init__(self, config, problem, gcode, parentfit)
+
+class RndAgent(ReNCoDeAgent):
+        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+            self.generate = arn.generatechromo_rnd
+            ReNCoDeAgent.__init__(self, config, problem, gcode, parentfit)
 
 def regressionfun(mapped, node_inputs, inputs ):
         if not node_inputs:

@@ -46,14 +46,31 @@ def generatechromo(initdm, mutratedm, genesize,
     Default function to generate an ARN chromosome.
     To be used with bindparams.
     '''
+    log.debug('Creating DM agent.')
     valid = False
-    while not 30 > valid >= 4:
+    while not 32 > valid >= 4:
         genome = BitStream(float=random.random(),length=32);
         for i in range(0,initdm):
             genome = dm_event(genome, mutratedm)
         promlist = buildpromlist(genome, excite_offset, genesize, promoter)
         valid = len(promlist)
+    return genome
 
+def generatechromo_rnd( genomesize = 4096, **bindargs):
+    '''
+    Default function to generate an ARN chromosome.
+    To be used with bindparams.
+    '''
+    log.debug('Creating random agent.')
+    valid = False
+    while not 32 > valid >= 4:
+        genome = BitStream(float=random.random(),length=64)
+        while len(genome)<genomesize:
+            genome += BitStream(float=random.random(),length=64)
+
+        promlist = buildpromlist(genome, bindargs['excite_offset'],
+                                 bindargs['genesize'], bindargs['promoter'])
+        valid = len(promlist)
     return genome
 
 def displayARNresults(proteins, ccs, step=1):
