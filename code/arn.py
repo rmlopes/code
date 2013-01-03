@@ -200,6 +200,7 @@ class ARNetwork:
         productsfun = bindparams(config, buildproducts)
         self.promlist = promfun(gcode)
         self.proteins = productsfun( gcode, self.promlist)
+        self.excite_offset = config.getint('default','excite_offset')
         #self.proteins = filter(lambda x: x[0] != 7912 and x[0] != 6651,
         #                       self.proteins)
 

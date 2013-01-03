@@ -169,11 +169,10 @@ class EvoDevoWorkbench:
                 #TODO: clean this code
                 offsprings = []
                 if self.xover_:
-                    for p in self.parents:
-                        r = random.random()
-                        if r < self.xrate:
-                            offsprings.extend( self._reproduct_agents(p,
-                                                random.choice(self.parents)))
+                    while len(offsprings)/float(self.popsize)\
+                    < self.xrate:
+                        breeders = random.sample(self.parents,2)
+                        offsprings.extend(self._reproduct_agents(*breeders))
                     log.debug('Created %i offsprings by xover.'
                               %(len(offsprings),))
 
@@ -184,9 +183,12 @@ class EvoDevoWorkbench:
                     self.population = (offsprings +
                                        mutants[:(self.popsize-len(offsprings))])
                 else:
-                    mutants = [self._create_mutant(p)
-                               for p in self.parents
-                               for i in range(self.popratio-1)]
+                    if len(offsprings) < self.popsize:
+                        mutants = [self._create_mutant(p)
+                                   for p in self.parents
+                                   for i in range(self.popratio-1)]
+                    else:
+                        mutants = []
                     self.population = (self.parents + offsprings +
                                        mutants[:self.popsize -
                                             (self.parentpsize+len(offsprings))])

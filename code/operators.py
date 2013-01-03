@@ -1,8 +1,10 @@
 import random
 from functools import partial
 from bitstring import BitStream
-from utils import *
+#from utils import *
+import logging
 
+log = logging.getLogger(__name__)
 
 def transposon(code, *args, **kwargs):
     tsize = int(args[0])
@@ -32,7 +34,6 @@ def delete(code, *args):
     del code[delpos:delpos+tsize]
     return code
 
-### for now just one point
 def twopoint_xover(p1,p2, *args):
     code1 = p1.genotype.code
     code2 = p2.genotype.code
@@ -43,6 +44,31 @@ def twopoint_xover(p1,p2, *args):
     p1,p2 = p
     o1 = BitStream(bin=(code1[:p1]+code2[p1:p2]+code1[p2:]).bin)
     o2 = BitStream(bin=(code2[:p1]+code1[p1:p2]+code2[p2:]).bin)
+    return o1, o2
+
+def genecut_xover(p1,p2, *args):
+    code1 = p1.genotype.code
+    code2 = p2.genotype.code
+    #maxl = min(len(code1),len(code2))
+    cutpts1 = random.sample(p1.genotype.promlist,2)
+    cutpts1.sort()
+    log.debug(str(cutpts1))
+    cutpts2 = random.sample(p2.genotype.promlist,2)
+    cutpts2.sort()
+    log.debug(str(cutpts2))
+    #p = [int(random.random() * maxl)]
+    #p.append(int(random.random() * maxl))
+    #p.sort()
+    #p1,p2 = p
+    excite_offset = p1.genotype.excite_offset
+    cutpts1 = map(lambda x: x - excite_offset, cutpts1)
+    cutpts2 = map(lambda x: x - excite_offset, cutpts2)
+    o1 = BitStream(bin=(code1[:cutpts1[0]]+
+                        code2[cutpts2[0]:cutpts2[1]]+
+                        code1[cutpts1[1]:]).bin)
+    o2 = BitStream(bin=(code2[:cutpts2[0]]+
+                        code1[cutpts1[0]:cutpts1[1]]+
+                        code2[cutpts2[1]:]).bin)
     return o1, o2
 
 def onepoint_xover(p1,p2,*args):
@@ -62,7 +88,7 @@ def uniform_xover(p1, p2, *args):
                  [int(round(random.random()))
                   for i in range(l)])
     bitmask = BitStream(bin=mask)
-    print bitmask.bin
+    #print bitmask.bin
     o1,o2 = '',''
     for i in range(len(bitmask.bin)):
         if bitmask[i]:
@@ -74,6 +100,11 @@ def uniform_xover(p1, p2, *args):
     return (BitStream(bin = o1), BitStream(bin = o2))
 
 if __name__ == '__main__':
+    log.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    log.addHandler(ch)
+    #test inner variation operators
     a = BitStream('0b' + '00011100011100011100')
     print a.bin
     transposon(a, 5)
@@ -83,14 +114,33 @@ if __name__ == '__main__':
     delete(a, 15)
     print a.bin
 
-    a = BitStream('0b' + '1'*10)
-    b = BitStream('0b' + '0'*20)
+    #test crossover operators
+    class Agent: pass
+    a = Agent()
+    a.genotype = Agent()
+    a.genotype.code = BitStream('0b' + '1'*10)
+    #a =
+    b = Agent()
+    b.genotype = Agent()
+    b.genotype.code = BitStream('0b' + '0'*20)
+    #b =
     c,d = twopoint_xover(a,b)
     print c.bin
     print d.bin
-
-    a = BitStream('0b' + '1'*10)
-    b = BitStream('0b' + '0'*20)
     e,f = uniform_xover(a,b)
     print e.bin
     print f.bin
+
+    #test gene oriented crossover
+    import ConfigParser
+    from rencode import DMAgent, ReNCoDeProb
+    arncfg = ConfigParser.ConfigParser()
+    arncfg.readfp(open('../configfiles/arnsim-rencode.cfg'))
+    p = ReNCoDeProb(None)
+    a = DMAgent(arncfg, p)
+    b = DMAgent(arncfg, p)
+    print "A: ", a.genotype.promlist
+    print "B: ", b.genotype.promlist
+    c,d = map(lambda o: DMAgent(arncfg,p,o),genecut_xover(a,b))
+    print "c: ", c.genotype.promlist
+    print "D: ", d.genotype.promlist

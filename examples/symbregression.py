@@ -38,10 +38,12 @@ if __name__ == '__main__':
                       target=kozapolynomial,
                       inputs=list(drange(-1,1.1,.1)))
     p = ReNCoDeProb(evalfun)
-    agentclass = getattr(__import__('__main__'),sys.argv[2])
-    #except:
-     #   print 'Loading default agent class'
-      #  agentclass = DMAgent
+
+    try:
+        agentclass = getattr(__import__('__main__'),sys.argv[2])
+    except:
+        print 'Loading default agent class'
+        agentclass = DMAgent
 
     edw = EvoDevoWorkbench(sys.argv[1],p,agentclass)
     edw.run()
