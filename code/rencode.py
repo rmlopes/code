@@ -61,7 +61,8 @@ class DMAgent(ReNCoDeAgent):
 
 class RndAgent(ReNCoDeAgent):
         def __init__(self, config, problem, gcode = None, parentfit = 1e4):
-            self.generate = arn.generatechromo_rnd
+            self.generate = partial(arn.generatechromo_rnd,
+                    genomesize = 32 * pow(2,config.getint('default','initdm')))
             ReNCoDeAgent.__init__(self, config, problem, gcode, parentfit)
 
 def regressionfun(mapped, node_inputs, inputs ):
