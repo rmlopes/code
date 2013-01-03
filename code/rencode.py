@@ -48,11 +48,15 @@ class ReNCoDeAgent(Agent):
                 arnet = arn.ARNetwork(gcode,config)
                 self.genotype = arnet
                 self.phenotype = buildcircuit(self,problem)
+                self.problem = problem
                 self.fitness = 1e4
 
         def __str__(self):
-                return "### Agent ###\n%s\n%s: %f" % (self.arn,self.circuit,
+                return "### Agent ###\n%s\n%s: %f" % (self.arn,self.phenotype,
                                                       self.fitness)
+
+        def pickled(self):
+            return self.problem.print_(self.phenotype)
 
 class DMAgent(ReNCoDeAgent):
         def __init__(self, config, problem, gcode = None, parentfit = 1e4):
