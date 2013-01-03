@@ -99,6 +99,29 @@ def uniform_xover(p1, p2, *args):
             o2 += code1.bin[i]
     return (BitStream(bin = o1), BitStream(bin = o2))
 
+def unigenecut_xover(p1, p2, *args):
+    code1 = p1.genotype.code
+    code2 = p2.genotype.code
+    l = min(len(p1.genotype.promlist),len(p2.genotype.promlist))
+    mask = reduce(lambda x,y: "%s%s"%(x,y),
+                  [int(round(random.random()))
+                   for i in range(l)])
+    bitmask = BitStream(bin=mask)
+    #print bitmask.bin
+    o1,o2 = '',''
+    for i in range(len(bitmask.bin)):
+        if bitmask[i]:
+            o1 += code1.bin[p1.genotype.promlist[i]-88:
+                            p1.genotype.promlist[i]+169]
+            o2 += code2.bin[p2.genotype.promlist[i]-88:
+                            p2.genotype.promlist[i]+169]
+        else:
+            o1 += code2.bin[p2.genotype.promlist[i]-88:
+                            p2.genotype.promlist[i]+169]
+            o2 += code1.bin[p1.genotype.promlist[i]-88:
+                            p1.genotype.promlist[i]+169]
+    return (BitStream(bin = o1), BitStream(bin = o2))
+
 if __name__ == '__main__':
     log.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
@@ -142,5 +165,8 @@ if __name__ == '__main__':
     print "A: ", a.genotype.promlist
     print "B: ", b.genotype.promlist
     c,d = map(lambda o: DMAgent(arncfg,p,o),genecut_xover(a,b))
-    print "c: ", c.genotype.promlist
+    print "C: ", c.genotype.promlist
     print "D: ", d.genotype.promlist
+    e,f = map(lambda o: DMAgent(arncfg,p,o),unigenecut_xover(a,b))
+    print "E: ", e.genotype.promlist
+    print "F: ", f.genotype.promlist
