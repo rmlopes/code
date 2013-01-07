@@ -99,6 +99,8 @@ def uniform_xover(p1, p2, *args):
             o2 += code1.bin[i]
     return (BitStream(bin = o1), BitStream(bin = o2))
 
+#FIXME: this operator results in a drastic reduction of genome size
+# leading to bad evolution
 def unigenecut_xover(p1, p2, *args):
     code1 = p1.genotype.code
     code2 = p2.genotype.code
