@@ -94,6 +94,7 @@ class EvoDevoWorkbench:
 
                 self.xover_ = config.get('default','xover')
                 if self.xover_:
+                    log.info('Initializing crossover operator...')
                     self.xover_ = getattr(mainmod,self.xover_)
                     self.xrate = config.getfloat('default','xrate')
 
