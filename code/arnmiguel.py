@@ -12,7 +12,7 @@ from subprocess import call
 from utils import *
 from utils.bitstrutils import *
 from time import clock
-from arn import bindparams, generatechromo, buildpromlist, \
+from arn import bindparams, generatechromo, \
     buildproducts, getbindings, _getweights, _getSignalArray
 from extendedarn import displayARNresults
 import copy
@@ -24,6 +24,33 @@ INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('0'*16 + '1'*16)),
                     BitStream(bin=('1'*16 + '0'*16)),
                     BitStream(bin=('1'*32))]
+
+
+def _get_all(promoter, genome, excite_offset,genesize):
+    promsize = len(promoter)
+    plist = genome.findall(BitStream(bin=promoter))
+    plist = filter( lambda index:
+                     int(excite_offset) <= index <  (genome.length-(int(genesize)+promsize )),
+                     plist)
+    return plist
+
+def _filteroverlapping(plist, genesize):
+    #plist of tuples (prom, type)
+    return reduce(lambda indxlst, indx:
+                  indxlst + [indx] if indx[0]-indxlst[-1][0] >= 32 + genesize + 64 else indxlst,
+                  plist[1:],
+                  plist[:1])
+
+def buildpromlist(genome, excite_offset, genesize,
+                  promoter, productprom, **kwargs):
+    plist1 = _get_all(promoter,genome, excite_offset, genesize)
+    plist2 = _get_all(productprom,genome, excite_offset, genesize)
+    alltogether = zip(plist1, [0]*len(plist1)) + zip(plist2, [1]*len(plist2))
+    alltogether.sort(key=lambda x: x[0])
+    alltogether = _filteroverlapping(alltogether, genesize)
+    tfs = [i[0] for i in alltogether if i[1] == 0]
+    outs = [i[0] for i in alltogether if i[1] == 1]
+    return tfs, outs
 
 def build_customproducts(signatures = INPUT_SIGNATURES):
     products = []
@@ -95,11 +122,12 @@ class ARNetwork:
 
         promfun = bindparams(config, buildpromlist)
         productsfun = bindparams(config, buildproducts)
-        self.promlist = promfun(gcode)
+        self.promlist,self.effectorproms = promfun(gcode,
+                                                   productprom='11111111')
         self.proteins = productsfun( gcode, self.promlist)
 
         self.effectors=[]
-        self.effectorproms = promfun(gcode, promoter='11111111')
+        #self.effectorproms = promfun(gcode, promoter='11111111')
         if self.effectorproms:
             #print 'EFFECTORS:', self.effectorproms
             self.effectors = productsfun(gcode,self.effectorproms)

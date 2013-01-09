@@ -60,7 +60,8 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
     return x, x_dot, theta, theta_dot
 
 def evaluate_individual(phenotype, test = None, **kwargs):
-
+    if len(phenotype) == 0:
+        return 1e9
     try:
         outidx = phenotype.output_idx
     except AttributeError:

@@ -58,8 +58,8 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         x_dot     = random.randint(0, 1999)/1000.0 - 1.0
         theta     = random.randint(0,  399)/1000.0 - 0.2
         theta_dot = random.randint(0, 2999)/1000.0 - 1.5
-        print "Initial conditions:"
-        print "%2.4f   %2.4f   %2.4f   %2.4f" %(x, x_dot, theta, theta_dot)
+        #print "Initial conditions:"
+        #print "%2.4f   %2.4f   %2.4f   %2.4f" %(x, x_dot, theta, theta_dot)
     else:
         x, x_dot, theta, theta_dot = test
         #x = 0.0
@@ -129,7 +129,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         if fitness > bestfit:
             bestfit = fitness
             phenotype.output_idx = oidx
-            print "output index is now: ",oidx
+            #print "output index is now: ",oidx
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
