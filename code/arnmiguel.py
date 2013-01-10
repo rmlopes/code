@@ -48,9 +48,8 @@ def buildpromlist(genome, excite_offset, genesize,
     alltogether = zip(plist1, [0]*len(plist1)) + zip(plist2, [1]*len(plist2))
     alltogether.sort(key=lambda x: x[0])
     alltogether = _filteroverlapping(alltogether, genesize)
-    tfs = [i[0] for i in alltogether if i[1] == 0]
-    outs = [i[0] for i in alltogether if i[1] == 1]
-    return tfs, outs
+    return ([i[0] for i in alltogether if i[1] == 0],
+            [i[0] for i in alltogether if i[1] == 1])
 
 def build_customproducts(signatures = INPUT_SIGNATURES):
     products = []

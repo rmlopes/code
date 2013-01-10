@@ -45,6 +45,7 @@ if __name__ == '__main__':
     inputs = map(factorstoinputs, perms)
     assert len(inputs) == 625
     results = []
+    original = copy.deepcopy(cell.phenotype.ccs)
     for i in inputs:
         fit = p.eval_(cell.phenotype, i)
         if fit < 0.000000001:
@@ -52,6 +53,7 @@ if __name__ == '__main__':
         else:
             results.append(1)
         print i, ' ', fit
+        cell.phenotype.reset(original)
      #print "\nInitial conditions:"
      #print "%2.4f   %2.4f   %2.4f   %2.4f" %tuple(init)
 
