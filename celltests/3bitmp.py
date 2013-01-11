@@ -43,16 +43,14 @@ if __name__ == '__main__':
         p.eval_ = bindparams(cfg, evaluatecircuit)
         p.plot_ = bindparams(cfg, plotindividual)
         #c = Cell(cfg,genome, problem = p )
-        for i in range(2):
-                fit = p.eval_(c.phenotype, True, shuffle = False)
-                print 'FIT: ', fit
+        for i in range(4):
+            fit = p.eval_(c.phenotype, True, shuffle = False)
+            print 'FIT: ', fit
+        for i in range(4):
+            fit = p.eval_(c.phenotype, True, shuffle = True)
+            print 'FIT: ', fit
+        for i in range(4):
+            fit = p.eval_(c.phenotype, True, shuffle = False)
+            print 'FIT: ', fit
+
         p.plot_(c.phenotype)
-        for i in range(6):
-                fit = p.eval_(c.phenotype, True, shuffle = True)
-                print 'FIT: ', fit
-        while True:
-                fit = p.eval_(c.phenotype, True, shuffle = False)
-                print 'FIT: ', fit
-        #fit = eval_(c, shuffle = False)
-        p.plot_(c.phenotype)
-        print 'FIT: ', fit

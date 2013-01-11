@@ -21,8 +21,8 @@ log = logging.getLogger(__name__)
 
 
 INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
-                    BitStream(bin=('0'*16 + '1'*16)),
                     BitStream(bin=('1'*16 + '0'*16)),
+                    BitStream(bin=('0'*16 + '1'*16)),
                     BitStream(bin=('1'*32))]
 
 

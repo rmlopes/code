@@ -30,7 +30,7 @@ def evaluatecircuit(phenotype, test = False, **kwargs):
         n = 3
         intinps = range(pow(2,n))
         if not test:
-                intinps = intinps[:]# + intinps[:]
+                intinps = intinps[:] + intinps[:]
         #random.shuffle(intinps)
         try:
                 if kwargs['shuffle']:
