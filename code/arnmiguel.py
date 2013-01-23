@@ -132,6 +132,7 @@ class ARNetwork:
             self.effectors = productsfun(gcode,self.effectorproms)
 
         self.receptors= build_customproducts()
+        self.receptorproms = [r[0] for r in self.receptors]
         #self.receptorproms = promfun(gcode, promoter='11111111')
         #if self.receptorproms:
             #print 'RECEPTORS:', self.receptorproms

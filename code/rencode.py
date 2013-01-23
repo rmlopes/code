@@ -6,6 +6,7 @@ import arn
 from evodevo import Problem, Agent
 from utils import *
 from utils.bitstrutils import *
+from utils.mathlogic import *
 
 log = logging.getLogger(__name__)
 
@@ -18,9 +19,12 @@ class ReNCoDeProb(Problem):
                   'inputs[0]':'x'}
         arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
         feedback = False
-        def __init__(self, evaluate):
-                Problem.__init__(self, evaluate, defaultnodemap,
-                                 printdotcircuit)
+        def __init__(self, evaluate, **kwargs):
+                try:
+                    pp = kwargs['printf']
+                except KeyError:
+                    pp = printdotcircuit
+                Problem.__init__(self, evaluate, defaultnodemap, pp)
 
 
 class ClassifProb(ReNCoDeProb):
@@ -114,14 +118,27 @@ def defaultnodemap(signature, mappingset):
                 intindex -= len(mappingset)
         return mappingset[intindex]
 
-def evaluatecircuit(circuit, circuitmap, resultdict, *inputs):
-        for i in range(len(circuit)):
-                inputvalues =  [resultdict[abs(v)] for v in circuit[-1-i][2]]
-                result = circuitmap(circuit[-1-i][1],
-                                    inputvalues,
-                                    inputs)
-                resultdict[circuit[-1-i][0]] = result
+def evaluatecircuit(circuit, circuitmap, resultdict, *inputs,**kwargs):
+    try:
+        nout = kwargs['nout']
+    except KeyError:
+        nout = 1
+    for i in range(len(circuit)):
+        inputvalues =  [resultdict[abs(v)] for v in circuit[-1-i][2]]
+        result = circuitmap(circuit[-1-i][1],
+                            inputvalues,
+                            inputs)
+        resultdict[circuit[-1-i][0]] = result
+    if nout == 1:
         return result
+    else:
+        results = tuple()
+        for i in range(nout):
+            if len(circuit) > i:
+                results += (resultdict[circuit[i][0]],)
+            else:
+                results += (0,)
+        return results
 
 def buildcircuit(agent, problem, **kwargs):
         """Returns the circuit to be fed into the evaluation function"""

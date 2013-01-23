@@ -11,52 +11,18 @@ from ..rencode import evaluatecircuit, nnlikefun
 
 log = logging.getLogger(__name__)
 
-def dumpcircuit(circuit, printfun):
-        g = graph_from_dot_data(printfun(circuit))
+def dumpcircuit(ind, printfun):
+        circuit = ind.phenotype
+        arnet = ind.genotype
+        g = graph_from_dot_data(printfun(circuit,arnet = arnet))
         g.write_png('temp.png')
 
 def zoomsurface(surface, panel):
         zoomed = pygame.transform.scale2x(surface)
         panel.image = zoomed
 
-def render_images(pop, img_size, feedback = False, **kwargs):
-        log.info('Rendering population...')
-        images = []
-        for i in pop:
-            #log.debug('######')
-            #log.debug(printcircuit(i.phenotype))
-            log.debug('Rendering individual')
-            striped = nparray(zeros(img_size+(3,)), dtype='int32')
-            resultdict = dict(zip([c[0] for c in i.phenotype],
-                                  [1.0]*len(i.phenotype)))
-            for x in range(img_size[0]):
-                for y in range(img_size[1]):
-                    if not feedback:
-                        resultdict = dict()
-                    r = evaluatecircuit(i.phenotype, nnlikefun,resultdict,
-                                        *(x,y))
-
-                    if not isinstance(r, long) and (isnan(r) or isinf(r)):
-                        r = .0
-
-                    #try:
-                    if abs(r) < 1:
-                            striped[x][y] = int(abs(r) * 255)
-                    else:
-                            striped[x][y] = int(abs(r) % 255)
-                    #except ValueError:
-                     #   import traceback
-                     #   print traceback.format_exc()
-                     #   print 'r: ', r
-                     #   exit(0)
-
-            images.append(striped)
-        log.info('done...')
-        return images
-
-
 class App:
-    def __init__(self,numimgs = 9, imgsize=(128,128),**kwargs):
+    def __init__(self,numimgs = 9, imgsize=(128,128),renderer = None, **kwargs):
         self.print_ = None
         try:
             self.print_ = kwargs['printfun']
@@ -76,6 +42,8 @@ class App:
          #   glevel = random.randint(0,255)
           #  striped[:] = glevel
            # self.images.append( nparray(striped, dtype='int32') )
+        mainmod = __import__('__main__')
+        self._render_images = getattr(mainmod, 'render_images')
 
         self.surfaces = []
         self.selected = []
@@ -99,7 +67,7 @@ class App:
             self.surfaces.append(self._display_surf.subsurface(
                 self.getXY(i)+self.img_size))
 
-        self.images = render_images(self.pop,self.img_size,
+        self.images = self._render_images(self.pop,self.img_size,
                                     self.problem.feedback)
         self.blit_images()
 
@@ -129,7 +97,7 @@ class App:
                 self.selected.append(self.getIndex(event.pos))
                 print self.selected
             elif event.button == 3:
-                dumpcircuit(self.pop[self.getIndex(event.pos)].phenotype,
+                dumpcircuit(self.pop[self.getIndex(event.pos)],
                             self.print_)
             else:
                 print event
@@ -175,7 +143,7 @@ class App:
             if self.on_init() == False:
                 self._running = False
         else:
-            self.images = render_images(self.pop,self.img_size,
+            self.images = self._render_images(self.pop,self.img_size,
                                         self.problem.feedback)
             self.blit_images()
 
@@ -187,6 +155,22 @@ class App:
 
         if not self._running:
             self.on_cleanup()
+
+
+class Visualizer(App):
+    def __init__(self, img):
+        self.img = img
+        self.size = img.shape[:2]
+        self._display_surf = None
+        self._running = False
+        self.pause = False
+
+    def on_init(self):
+        pygame.init()
+        self._display_surf = pygame.display.set_mode(self.size)
+        self._running = True
+        blit_array(self._display_surf, self.img)
+        pygame.display.flip()
 
 if __name__ == "__main__" :
     #TODO: update this test
