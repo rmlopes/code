@@ -74,53 +74,57 @@ def evaluate_individual(phenotype, test = None, **kwargs):
 
         #net = nn.create_phenotype(chromo)
         # initial conditions (as used by Stanley)
+    inits = []
     if not test:
-        x         = random.randint(0, 4799)/1000.0 - 2.4
-        x_dot     = random.randint(0, 1999)/1000.0 - 1.0
-        theta     = random.randint(0,  399)/1000.0 - 0.2
-        theta_dot = random.randint(0, 2999)/1000.0 - 1.5
-        print "Initial conditions:"
-        print "%2.4f   %2.4f   %2.4f   %2.4f" %(x, x_dot, theta, theta_dot)
+        for i in range(5):
+            x         = random.randint(0, 4799)/1000.0 - 2.4
+            x_dot     = random.randint(0, 1999)/1000.0 - 1.0
+            theta     = random.randint(0,  399)/1000.0 - 0.2
+            theta_dot = random.randint(0, 2999)/1000.0 - 1.5
+            #print "Initial conditions:"
+            #print "%2.4f   %2.4f   %2.4f   %2.4f" %(x, x_dot, theta, theta_dot)
+            inits.append((x, x_dot, theta, theta_dot))
     else:
         x, x_dot, theta, theta_dot = test
-        #x = 0.0
-        #x_dot = 0.0
-        #theta = 0.0
-        #theta_dot = 0.0
+        inits = [(x, x_dot, theta, theta_dot)]
 
-    bestfit = 1
-    orig_x, orig_x_dot, orig_theta, orig_theta_dot = x, x_dot, theta,theta_dot
+
+
     #    print 'Orginal state: ', orig_state
+    bestfit = 0
     for oidx in range(len(phenotype.products)):
-        fitness = 0
-        x, x_dot, theta, theta_dot = (orig_x, orig_x_dot,
-                                      orig_theta, orig_theta_dot)
         if test:
             idx = phenotype.arnet.output_idx
         else:
             idx = oidx
-        for trials in xrange(num_steps):
-            output = evaluatecircuit(phenotype.getcircuit(idx),
+        fitsum = 0
+        for t in inits:
+            #orig_x, orig_x_dot, orig_theta, orig_theta_dot = t
+            fitness = 0
+            x, x_dot, theta, theta_dot = t
+            for trials in xrange(num_steps):
+                output = evaluatecircuit(phenotype.getcircuit(idx),
                                      regressionfun, dict(),
                                      *(x, x_dot, theta, theta_dot))
-
-            x, x_dot, theta, theta_dot = cart_pole(output,
+                x, x_dot, theta, theta_dot = cart_pole(output,
                                                    x, x_dot, theta, theta_dot)
-            # Check for failure.  If so, return steps
-            # the number of steps indicates the fitness: higher = better
-            #RL-NOTE: original does not check for the speed boundaries
-            # Problem description in Nicoulau et al. 2010 shows closed
-            # intervals
-            fitness += 1
-            if (abs(x) > 2.4 or abs(theta) > TWELVE_DEGREES):
-                #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
-                # the cart/pole has run/inclined out of the limits
-                break
+                # Check for failure.  If so, return steps
+                # the number of steps indicates the fitness: higher = better
+                #RL-NOTE: original does not check for the speed boundaries
+                # Problem description in Nicoulau et al. 2010 shows closed
+                # intervals
+                fitness += 1
+                if (abs(x) > 2.4 or abs(theta) > TWELVE_DEGREES):
+                    #or abs(x_dot) > 1 or abs(theta_dot) > 1.5):
+                    # the cart/pole has run/inclined out of the limits
+                    break
+            fitsum += fitness
+        curfit = fitsum / float(len(inits))
         if test:
-            bestfit = fitness
+            bestfit = curfit
             break
-        if fitness > bestfit:
-            bestfit = fitness
+        if curfit > bestfit:
+            bestfit = curfit
             phenotype.output_idx = oidx
             print "output index is now: ",oidx
 
@@ -136,6 +140,7 @@ class CartPoleProb(ReNCoDeProb):
         terms = [ 'inputs[0]','inputs[1]','inputs[2]','inputs[3]' ]
         def __init__(self, evalf):
             self.ninp = 4
+            self.nout = 1
             ReNCoDeProb.__init__(self,evalf, printf=printrencode2)
 
 def factorstoinputs( factors ):

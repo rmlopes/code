@@ -60,19 +60,36 @@ class Phenotype:
         self.circuits = []
         self.graph = arnet.ebindings - arnet.ibindings
         self.arnet = arnet
-        for i in range(len(self.products)):
-            arnet.output_idx = i
-            queue = self.getinputs(arnet.numtf+arnet.numrec+i)
-            #print "effector inputs: ", queue
-            fset = problem.funs
-            if not queue:
-                fset = problem.terms
-            circuit = [(arnet.effectors[i][0],
-                        self.problem.nodemap_(arnet.effectors[i][4],fset),
-                        list())]
-            self.circuits.append(self.buildcircuit(queue, circuit))
-            #print self.circuits[-1]
-            #print problem.print_(self)
+        if problem.nout == 1:
+            for i in range(len(self.products)):
+                arnet.output_idx = i
+                queue = self.getinputs(arnet.numtf+arnet.numrec+i)
+                #print "effector inputs: ", queue
+                fset = problem.funs
+                if not queue:
+                        fset = problem.terms
+                circuit = [(arnet.effectors[i][0],
+                            self.problem.nodemap_(arnet.effectors[i][4],fset),
+                            [q[0] for q in queue])]
+                self.circuits.append(self.buildcircuit(queue, circuit))
+                #print self.circuits[-1]
+                #print problem.print_(self)
+        else:
+            queue=[]
+            circuit=[]
+            for i in range(problem.nout):
+                inps = self.getinputs(arnet.numtf+arnet.numrec+i)
+                fset = problem.funs
+                if not inps:
+                        fset = problem.terms
+                circuit.append((arnet.effectors[i][0],
+                                self.problem.nodemap_(arnet.effectors[i][4],
+                                                      fset),
+                                [inp[0] for inp in inps]))
+                queue.extend(inps)
+            queue.sort(key=lambda x: x[1], reverse=True)
+            self.circuits.append(self.buildcircuit(queue,circuit))
+
         #map receptors to inputs
         #map tfs to functions
         #map output(s) to functions
@@ -80,12 +97,12 @@ class Phenotype:
         #start by using match strength using positive/negative to
         #give the direction
 
-    def getcircuit(self, index):
+    def getcircuit(self, index=0):
         return self.circuits[index]
 
-    def buildcircuit(self, queue, circuit=[]):
+    def buildcircuit(self, queue, circuit=[], force_inputs=False):
         if not queue:
-            if len(circuit) > 1:
+            if len(circuit) > 1 or force_inputs:
                 circuit.extend(self.getinputnodes())
             return circuit
 
@@ -95,7 +112,7 @@ class Phenotype:
             return self.buildcircuit(queue, circuit)
             #break;
         elif pnext[0] in self.arnet.receptorproms:
-            return self.buildcircuit(queue, circuit)
+            return self.buildcircuit(queue, circuit, force_inputs=True)
             #break;
         else:
             blacklist.append(pnext[0])
