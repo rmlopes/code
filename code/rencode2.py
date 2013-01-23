@@ -77,7 +77,7 @@ class Phenotype:
         else:
             queue=[]
             circuit=[]
-            for i in range(problem.nout):
+            for i in range(arnet.numeff):
                 inps = self.getinputs(arnet.numtf+arnet.numrec+i)
                 fset = problem.funs
                 if not inps:
