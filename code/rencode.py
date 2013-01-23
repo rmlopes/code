@@ -6,6 +6,7 @@ import arn
 from evodevo import Problem, Agent
 from utils import *
 from utils.bitstrutils import *
+from utils.mathlogic import *
 
 log = logging.getLogger(__name__)
 
@@ -18,9 +19,12 @@ class ReNCoDeProb(Problem):
                   'inputs[0]':'x'}
         arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
         feedback = False
-        def __init__(self, evaluate):
-                Problem.__init__(self, evaluate, defaultnodemap,
-                                 printdotcircuit)
+        def __init__(self, evaluate, **kwargs):
+                try:
+                    pp = kwargs['printf']
+                except KeyError:
+                    pp = printdotcircuit
+                Problem.__init__(self, evaluate, defaultnodemap, pp)
 
 
 class ClassifProb(ReNCoDeProb):
