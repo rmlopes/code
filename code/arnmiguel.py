@@ -27,7 +27,11 @@ INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('0111'*8)),
                     BitStream(bin=('0011'*8)),
                     BitStream(bin=('0001'*8)),
-                    BitStream(bin=('0101'*8))]
+                    BitStream(bin=('0101'*8)),
+                    BitStream(bin=('00001111'*4)),
+                    BitStream(bin=('11110000'*4)),
+                    BitStream(bin=('0000000011111111'*2)),
+                    BitStream(bin=('1111111100000000'*2))]
 
 
 def _get_all(promoter, genome, excite_offset,genesize):

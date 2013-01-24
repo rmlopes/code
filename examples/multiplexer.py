@@ -84,9 +84,9 @@ def evaluate(phenotype, test = False, nbits = 3, **kwargs):
 
 if __name__ == '__main__':
     #p  = BooleanProb(evaluate)
-    evalf = partial(evaluate, nbits=6)
+    evalf = partial(evaluate, nbits=11)
     #mapfun = getoutputp0p1)
-    p = BooleanProb(6,evalf)
+    p = BooleanProb(11,evalf)
     edw = EvoDevoWorkbench(sys.argv[1],p,RndAgent)
     #p.eval_ = bindparams(edw.arnconfig, p.eval_)
     edw.run()
