@@ -23,7 +23,11 @@ log = logging.getLogger(__name__)
 INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('1'*16 + '0'*16)),
                     BitStream(bin=('0'*16 + '1'*16)),
-                    BitStream(bin=('1'*32))]
+                    BitStream(bin=('1'*32)),
+                    BitStream(bin=('0111'*8)),
+                    BitStream(bin=('0011'*8)),
+                    BitStream(bin=('0001'*8)),
+                    BitStream(bin=('0101'*8))]
 
 
 def _get_all(promoter, genome, excite_offset,genesize):
@@ -143,13 +147,16 @@ class ARNetwork:
 
         prob = kwargs['problem']
         self.numtf = len(self.proteins)
-        #self.numeff = min(len(self.effectors),prob.nout)
-        self.numeff = len(self.effectors)
+        if prob.nout == 1:
+                self.numeff = len(self.effectors)
+        else:
+                self.numeff = min(len(self.effectors),prob.nout)
+
         #self.effectors = self.effectors[:self.numeff]
-        self.numrec = min(4,prob.ninp)
+        self.numrec = min(len(self.receptorproms),prob.ninp)
         self.receptors = self.receptors[:self.numrec]
         self.ccs = []
-        if self.promlist:
+        if self.promlist or self.effectorproms:
             self.ccs = nparray([1.0/(self.numtf+self.numeff+self.numrec)]*
                                (self.numtf+self.numeff+self.numrec))
             self._initializehistory()
@@ -160,7 +167,7 @@ class ARNetwork:
 
         self.simfun = bindparams(config,iterate)
         self.delta = config.getfloat('default','delta')
-        self.output_idx = 0
+        #self.output_idx = 0
 
     def _initializebindings(self, pbindfun):
         self.ebindings = pbindfun(0, self.proteins  + self.receptors +
