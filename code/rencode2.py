@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 def printrencode2(phenotype, **kwargs):
     return rencode.printdotcircuit(
-            phenotype.circuits[phenotype.arnet.output_idx],**kwargs)
+            phenotype.circuits[phenotype.output_idx],**kwargs)
 
 ### Agent model to use with this CoDe module
 class ARNGPAgent(Agent):
@@ -25,13 +25,16 @@ class ARNGPAgent(Agent):
                 generator = bindparams(config, self.generate)
                 if gcode == None:
                     numprods = 0
-                    while not numprods:
+                    numtfs = 0
+                    while not numprods or not numtfs:
                         arnet = ARNetwork(generator(),config, problem=problem)
                         numprods = arnet.numeff
+                        numtfs = arnet.numtf
                 else:
                     arnet = ARNetwork(gcode,config, problem=problem)
                 self.genotype = arnet
-                self.phenotype = Phenotype(self.genotype,problem)
+                #print arnet.promlist
+                self.phenotype = Phenotype(arnet,problem)
                 self.problem = problem
                 self.fitness = 1e9
 
@@ -60,9 +63,10 @@ class Phenotype:
         self.circuits = []
         self.graph = arnet.ebindings - arnet.ibindings
         self.arnet = arnet
+        self.output_idx = 0
         if problem.nout == 1:
             for i in range(len(self.products)):
-                arnet.output_idx = i
+                self.output_idx = i
                 queue = self.getinputs(arnet.numtf+arnet.numrec+i)
                 #print "effector inputs: ", queue
                 fset = problem.funs

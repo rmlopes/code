@@ -94,7 +94,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
     bestfit = 0
     for oidx in range(len(phenotype.products)):
         if test:
-            idx = phenotype.arnet.output_idx
+            idx = phenotype.output_idx
         else:
             idx = oidx
         fitsum = 0
