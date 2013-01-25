@@ -15,6 +15,28 @@ def printrencode2(phenotype, **kwargs):
     return rencode.printdotcircuit(
             phenotype.circuits[phenotype.output_idx],**kwargs)
 
+
+def printmultiplecircuit(phenotype, labels=None, arnet = None):
+    circuit = phenotype.getcircuit()
+    if not arnet:
+        arnet = phenotype.arnet
+    s = 'digraph best {\nordering = out;\n'
+    for c in circuit:
+        shape='oval'
+        if c[0] in arnet.effectorproms:
+            shape='hexagon'
+        elif c[0] in arnet.receptorproms:
+            shape='rectangle'
+        s += '%i [label="%s",shape="%s"];\n' % (c[0], c[1], shape)
+                #else labels[c[1]])
+        for inp in c[2]:
+            aux = "dir=back"
+            if inp < 0:
+                aux += ",style=dotted"
+            s += '%i -> %i [%s];\n' % (c[0],abs(inp),aux)
+    s += '}'
+    return s
+
 ### Agent model to use with this CoDe module
 class ARNGPAgent(Agent):
         genotype = None

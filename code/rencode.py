@@ -28,10 +28,12 @@ class ReNCoDeProb(Problem):
 
 
 class ClassifProb(ReNCoDeProb):
-    extrafuns = ['exp_','min_','max_','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
-    def __init__(self, evaluate, numfeat):
+    #extrafuns = ['exp_','min_','max_','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
+    extrafuns = ['exp_','min_','max_','log_']
+    #,'tanh_','sin_','cos_','sinh_','cosh_','tan_']
+    def __init__(self, evaluate, numfeat, **kwargs):
         self.labels = None
-        ReNCoDeProb.__init__(self,evaluate)
+        ReNCoDeProb.__init__(self,evaluate, **kwargs)
         self.terms.extend(["inputs[%i]"%i
                            for i in range(1,numfeat)])
         self.funs.extend(self.extrafuns)
