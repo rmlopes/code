@@ -4,7 +4,7 @@ from code.operators import *
 from math import *
 from code.utils.mathlogic import *
 from code.rencode2 import *
-from code.rencode import evaluatecircuit, ClassifProb, nnlikefun
+from code.rencode import evaluatecircuit, ReNCoDeProb, regressionfun
 from random import sample
 #import matplotlib.mlab as mlab
 from numpy import array as nparray
@@ -35,7 +35,7 @@ def evaluate(phenotype, test = False, relax = False):
                          for i in range(5)])
     for c,feats in workingset:
         #try:
-        results = evaluatecircuit(circuit, nnlikefun,
+        results = evaluatecircuit(circuit, regressionfun,
                                   dict(), *feats, nout=5)
 
         to_order = zip(results,range(1,6))
@@ -96,12 +96,17 @@ def runfold(i, datasets, edw, globalconfusion):
     globalconfusion += confusion
     return confusion_f1(confusion)
 
-class CProb(ClassifProb):
+class CProb(ReNCoDeProb):
+    extrafuns = ['add_','sub_','mul_','div_']
     def __init__(self, evaluate, numinputs):
         self.nout = 5
         self.ninp = numinputs
-        ClassifProb.__init__(self, evaluate,numinputs,
-                             printf = printmultiplecircuit)
+        self.labels = None
+        ReNCoDeProb.__init__(self,evaluate,printf=printmultiplecircuit)
+        self.terms.extend(["inputs[%i]"%i
+                           for i in range(1,numinputs)])
+        self.funs.extend(self.extrafuns)
+        self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
 
 def createfolds(data, numfolds = 3):
     #zipped1 = map(lambda x: (1,x[1],(x[0],x[2])) if x[0] == target else (0,x[1],(x[0],x[2])),
