@@ -16,9 +16,9 @@ class BooleanProb(ReNCoDeProb):
         feedback = True
         def __init__(self, nbits, evalf):
                 self.ninp = nbits
-                self.nout = 1
+                self.nout = 2
                 self.terms = ['inputs[%i]'%(idx,) for idx in range(nbits)]
-                ReNCoDeProb.__init__(self,evalf, printf=printrencode2)
+                ReNCoDeProb.__init__(self,evalf, printf=printmultiplecircuit)
 
 def testadder(phenotype, intinps):
     #FIXME: n = log_2(len(intinps))
@@ -39,13 +39,13 @@ def testadder(phenotype, intinps):
         try:
                 out0,out1 = evaluatecircuit(phenotype.getcircuit(outidx),
                               regressionfun, dict(),
-                              *inputs.bin)
+                                            *inputs.bin, nout = 2)
         except:
                 print phenotype.getcircuit(outidx)
                 print inputs.bin
         #print 'OUT: ', out
         #out = 0 if out <= 0 else 1
-        result = out0 * 2 + out1 * 1
+        result = int(out0) * 2 + int(out1) * 1
         if result == inputs.count(1):
             #print out, inputs
             ok += 1
@@ -66,7 +66,7 @@ def evaluate(phenotype, test = False, nbits = 3, **kwargs):
         bestfit = 0
         bestout = 0
         #print 'ORIGINAL: ',orig_state
-        bestfit = testmp(phenotype, intinps)
+        bestfit = testadder(phenotype, intinps)
         return len(intinps) - bestfit
 
 if __name__ == '__main__':

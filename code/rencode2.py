@@ -17,7 +17,7 @@ def printrencode2(phenotype, **kwargs):
 
 
 def printmultiplecircuit(phenotype, labels=None, arnet = None):
-    circuit = phenotype.getcircuit()
+    circuit = phenotype.getcircuit(phenotype.output_idx)
     if not arnet:
         arnet = phenotype.arnet
     s = 'digraph best {\nordering = out;\n'
