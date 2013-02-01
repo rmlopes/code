@@ -19,24 +19,6 @@ from code.operators import *
 
 log = logging.getLogger(__name__)
 
-def printmultiplecircuit(circuit, labels=None, arnet = None):
-    s = 'digraph best {\nordering = out;\n'
-    for c in circuit:
-        shape='oval'
-        if c[0] in arnet.effectorproms:
-            shape='hexagon'
-        elif c[0] in arnet.receptorproms:
-            shape='rectangle'
-        s += '%i [label="%s",shape="%s"];\n' % (c[0], c[1], shape)
-        #else labels[c[1]])
-        for inp in c[2]:
-                aux = "dir=back"
-                if inp < 0:
-                    aux += ",style=dotted"
-                s += '%i -> %i [%s];\n' % (c[0],abs(inp),aux)
-                s += '}'
-    return s
-
 class ArtistProb(Problem):
     funs = ['add_', 'sub_','mul_','div_',
             'sin_','cos_','sinh_', 'cosh_']
@@ -44,7 +26,7 @@ class ArtistProb(Problem):
             #'cos_','add_','cosh_','sinh_']
     terms = ['inputs[0]','inputs[1]','inputs[2]']
     arity = {}
-    feedback = True
+    feedback = False
     labels = None
     def __init__(self):
         self.nout = 3
@@ -88,23 +70,29 @@ def render_images(pop, img_size, feedback = False, **kwargs):
                     #exit(0)
                     if not isinstance(r, long) and (isnan(r) or isinf(r)):
                         r = .0
-                    elif abs(r) > 1.0:
-                        r = 1.0
+                    if abs(r) > 1.0:
+                        r = r % 255
+                    else:
+                        r *= 255
 
                     if not isinstance(g, long) and (isnan(g) or isinf(g)):
                         g = .0
-                    elif abs(g) > 1.0:
-                        g = 1.0
+                    if abs(g) > 1.0:
+                        g = g % 255
+                    else:
+                        g *= 255
 
                     if not isinstance(b, long) and (isnan(b) or isinf(b)):
                         b = .0
-                    elif abs(b) > 1.0:
-                        b = 1.0
+                    if abs(b) > 1.0:
+                        b = b % 255
+                    else:
+                        b *= 255
 
                     try:
-                            striped[x][y] = (int(abs(r) * 255),
-                                             int(abs(g) * 255),
-                                             int(abs(b) * 255))
+                            striped[x][y] = (int(abs(r)),
+                                             int(abs(g)),
+                                             int(abs(b)))
                     except OverflowError:
                             print "Overflow error.... "
                             striped[x][y] = 0
@@ -124,7 +112,12 @@ def render_images(pop, img_size, feedback = False, **kwargs):
         return images
 
 def prepare_inputs(point, imgsize):
-    return normalizexy(point, imgsize) + (getcenterdistance(point, imgsize),)
+    #return normalizexy(point, imgsize) + (getcenterdistance(point,
+    #imgsize),)
+    center = (int(imgsize[0]/2.0),
+              int(imgsize[1]/2.0))
+    return point + (sqrt(pow(point[0]-center[0],2)
+                         + pow(point[1]-center[1],2)),)
 
 def getcenterdistance(point, imgsize):
     center = (int(imgsize[0]/2.0),
@@ -148,7 +141,7 @@ if __name__ == '__main__':
 
         filename = "selectedcircuits.dot"
         f = open(filename,'w')
-        for i in edw.gui.selected:
+        for i in range(5):
             f.write(edw.population[i].genotype.code.bin)
             f.write("\n")
         f.close

@@ -13,7 +13,9 @@ log = logging.getLogger(__name__)
 
 def dumpcircuit(ind, printfun):
         circuit = ind.phenotype
+        print circuit.getcircuit()
         arnet = ind.genotype
+        print arnet.code.bin
         g = graph_from_dot_data(printfun(circuit,arnet = arnet))
         g.write_png('temp.png')
 
@@ -136,6 +138,7 @@ class App:
     def unpause(self):
         self.pause = False
         self.selected = []
+        print 'do something now...'
         self.on_execute()
 
     def on_execute(self):
@@ -158,9 +161,9 @@ class App:
 
 
 class Visualizer(App):
-    def __init__(self, img):
+    def __init__(self, img, size):
         self.img = img
-        self.size = img.shape[:2]
+        self.size = size
         self._display_surf = None
         self._running = False
         self.pause = False

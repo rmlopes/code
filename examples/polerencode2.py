@@ -53,11 +53,11 @@ def cart_pole(net_output, x, x_dot, theta, theta_dot):
 
     #Update the four state variables, using Euler's method
     #RL-NOTE in my opinion the dots should be updated first
-
-    x         += TAU * x_dot
     x_dot     += TAU * xacc
-    theta     += TAU * theta_dot
+    x         += TAU * x_dot
     theta_dot += TAU * thetaacc
+    theta     += TAU * theta_dot
+
 
     return x, x_dot, theta, theta_dot
 
@@ -76,7 +76,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         # initial conditions (as used by Stanley)
     inits = []
     if not test:
-        for i in range(5):
+        for i in range(1):
             x         = random.randint(0, 4799)/1000.0 - 2.4
             x_dot     = random.randint(0, 1999)/1000.0 - 1.0
             theta     = random.randint(0,  399)/1000.0 - 0.2
@@ -126,7 +126,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         if curfit > bestfit:
             bestfit = curfit
             phenotype.output_idx = oidx
-            print "output index is now: ",oidx
+            #print "output index is now: ",oidx
 
     #Fitness as defined in (Nicolau et al., 2010)
     #adapted to minimize untill zero
