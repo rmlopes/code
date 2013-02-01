@@ -119,11 +119,9 @@ def getbindings(bindtype, proteins, match_threshold,**kwargs):
                          for otherps in proteins]
                         for p in proteins],dtype=float);
 
-def iterate(proteins, ccs, excite_weights, inhibit_weights,
-            samplerate, simtime, silentmode, simstep,delta,**kwargs):
-    time = 0
-    cchistory=nparray(ccs)
-    while time < simtime:
+def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
+    time = 1
+    while time <= simtime:
         #if time > 1500:# and time % 300 ==0 :
          #       for i in range(len(ccs)):
           #              if proteins[i][0] == 4498:
@@ -132,18 +130,19 @@ def iterate(proteins, ccs, excite_weights, inhibit_weights,
          #       for i in range(len(ccs)):
           #              if proteins[i][0] == 2555:
            #                     ccs[i] =  .1
-        _update(proteins,ccs,excite_weights,inhibit_weights,delta)
+        _update(arnet.proteins,arnet.ccs,arnet.eweights,
+                arnet.iweights,delta)
         if(not(silentmode) and
            (time % (simtime*samplerate) == 0)):
             log.debug('TIME: '+ str(time))
             for p in proteins:
-                cchistory = np.column_stack((cchistory,ccs))
+                arnet.updatehistory()
         time+=simstep
 
     if not silentmode:
         displayARNresults(proteins, cchistory,simstep)
 
-    return ccs
+    return arnet.ccs
     #for i in range(len(proteins)):
         #proteins[i].append(ccs[i])
 
@@ -208,37 +207,52 @@ class ARNetwork:
         weightsfun = bindparams(config, _getweights)
         nump = len(self.proteins)
         if self.promlist:
-            self.ebindings = pbindfun(0,self.proteins)
-            self.ibindings = pbindfun(1,self.proteins)
-            self.eweights = weightsfun(self.ebindings)
-            self.iweights = weightsfun(self.ibindings)
             self.ccs=nparray([1.0/nump]*nump)
             for i in range(len(self.proteins)):
                 self.proteins[i].append(self.ccs[i])
-            #for i in range(len(self.ccs)):
-              #  if self.promlist[i] == 7912:
-                #        self.ccs[i] += 0.75
+            self._initializehistory()
+            self._initializebindings(pbindfun)
+            self._initializeweights(weightsfun)
         self.simfun = bindparams(config,iterate)
         self.delta = config.getfloat('default','delta')
+        self.numtf = len(self.proteins)
+
+    def _initializebindings(self, pbindfun):
+        self.ebindings = pbindfun(0, self.proteins)
+        self.ibindings = pbindfun(1, self.proteins)
+
+    def _initializeweights(self, weightsfun):
+        self.eweights = weightsfun(self.ebindings)
+        #print 'ebinds: ', self.eweights.shape
+        self.iweights = weightsfun(self.ibindings)
+        #print 'ebinds: ', self.iweights.shape
+
+
+    def _initializehistory(self):
+        self.cchistory=nparray(self.ccs)
+
+    def updatehistory(self):
+        self.cchistory = np.column_stack((self.cchistory,
+                                          self.ccs))
 
     def __str__(self):
         return str(self.proteins)
 
     def simulate(self):
         if self.simtime > 0:
-            self.simfun(self.proteins, self.ccs,
-                        self.eweights, self.iweights)
+            self.simfun(self)
             for i in range(len(self.proteins)):
                 self.proteins[i][-1] = self.ccs[i]
+            #print [c[5] for c in self.proteins]
 
     def stepsimulate(self, proteins, ccs):
          _updatenonorm(proteins, ccs, self.eweights, self.iweights, self.delta)
          return ccs
 
     def nstepsim(self, n = 1000):
-        for i in range(n):
-            self.simfun(self.proteins, self.ccs,
-                        self.eweights, self.iweights)
+
+        self.simfun(self.proteins, self.ccs,
+                    self.eweights, self.iweights,simtime=n)
         for i in range(len(self.proteins)):
             self.proteins[i][-1] = self.ccs[i]
 
