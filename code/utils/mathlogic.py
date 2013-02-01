@@ -2,16 +2,16 @@ from math import log,exp,tan,tanh,sqrt,cos,sin,cosh,sinh
 import operator
 
 #### MATH ###
-def add_(x1, x2 = 0):
+def add_(x1 = 1.0, x2 = 0):
     return operator.add(x1,x2)
 
-def sub_(x1, x2 = 0):
+def sub_(x1 = 1.0, x2 = 0):
     return operator.sub(x1,x2)
 
-def mul_(x1, x2 = 1):
+def mul_(x1 = 1, x2 = 1):
     return operator.mul(x1,x2)
 
-def div_(x, y = 1):
+def div_(x = 1, y = 1):
     if(y==0): return 1.0
     try:
         return float(x) / y
