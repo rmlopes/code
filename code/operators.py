@@ -21,14 +21,14 @@ def transposon(code, *args, **kwargs):
 movingtransposon = partial(transposon,
                            excise = True)
 
-def junk(code, *args):
+def junk(code, *args, **kwargs):
     tsize = int(args[0])
     instream = BitStream(bin='0b'+'0'*tsize)
     insertpos = random.randint(1, len(code)-tsize)
     code.insert(instream,insertpos)
     return code
 
-def delete(code, *args):
+def delete(code, *args, **kwargs):
     tsize = int(args[0])
     delpos = random.randint(1, len(code)-tsize)
     del code[delpos:delpos+tsize]
@@ -97,6 +97,8 @@ def uniform_xover(p1, p2, *args):
         else:
             o1 += code2.bin[i]
             o2 += code1.bin[i]
+    o1 += code1.bin[l:]
+    o2 += code2.bin[l:]
     return (BitStream(bin = o1), BitStream(bin = o2))
 
 #FIXME: this operator results in a drastic reduction of genome size
@@ -123,6 +125,18 @@ def unigenecut_xover(p1, p2, *args):
             o2 += code1.bin[p1.genotype.promlist[i]-88:
                             p1.genotype.promlist[i]+169]
     return (BitStream(bin = o1), BitStream(bin = o2))
+
+def transposon(code, *args, **kwargs):
+    tsize = int(args[0])
+    copypos = random.randint(1, len(code)-tsize)
+    transp = code[copypos:copypos+tsize]
+    try:
+        if kwargs['excise']:
+            del code[copypos:copypos+tsize]
+    except KeyError: pass
+    insertpos = random.randint(1, len(code)-tsize)
+    code.insert(transp, insertpos)
+    return code
 
 if __name__ == '__main__':
     log.setLevel(logging.DEBUG)

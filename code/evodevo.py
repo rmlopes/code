@@ -205,7 +205,8 @@ class EvoDevoWorkbench:
             op_ = _selectop(self.ops_,self.oprates)
             gcodeclass = parent.genotype.code.__class__
             return self.agentclass( gcode = self.mutate_(
-                op_(gcodeclass(parent.genotype.code), *self.opargs)),
+                    op_(gcodeclass(parent.genotype.code), *self.opargs,
+                        arnet = parent.genotype)),
                                     parentfit = parent.fitness,
                                     problem = self.problem)
 
@@ -297,7 +298,7 @@ class EvoDevoWorkbench:
                         reduce(lambda m,n: str(m)+'\t'+str(n), tolog))
 
 
-def _idle(gcode, *args):
+def _idle(gcode, *args, **kwargs):
         return gcode
 
 def _initialize_ops(opnames, rates):
