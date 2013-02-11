@@ -116,33 +116,42 @@ def unigenecut_xover(p1, p2, *args):
     for i in range(len(bitmask.bin)):
         if bitmask[i]:
             o1 += code1.bin[p1.genotype.promlist[i]-88:
-                            p1.genotype.promlist[i]+169]
+                            p1.genotype.promlist[i]+168]
             o2 += code2.bin[p2.genotype.promlist[i]-88:
-                            p2.genotype.promlist[i]+169]
+                            p2.genotype.promlist[i]+168]
         else:
             o1 += code2.bin[p2.genotype.promlist[i]-88:
-                            p2.genotype.promlist[i]+169]
+                            p2.genotype.promlist[i]+168]
             o2 += code1.bin[p1.genotype.promlist[i]-88:
-                            p1.genotype.promlist[i]+169]
+                            p1.genotype.promlist[i]+168]
     return (BitStream(bin = o1), BitStream(bin = o2))
 
-def transposon(code, *args, **kwargs):
-    tsize = int(args[0])
-    copypos = random.randint(1, len(code)-tsize)
-    transp = code[copypos:copypos+tsize]
-    try:
-        if kwargs['excise']:
-            del code[copypos:copypos+tsize]
-    except KeyError: pass
-    insertpos = random.randint(1, len(code)-tsize)
-    code.insert(transp, insertpos)
+def genecopy(code, *args, **kwargs):
+    arnet = kwargs['arnet']
+    choice = random.choice(arnet.promlist)
+    #FIXME
+    transp = code[choice-88:choice+168]
+    #always at the end because it is indifferent
+    code.append(transp)
+    return code
+
+def genedelete(code, *args, **kwargs):
+    arnet = kwargs['arnet']
+    choice = random.choice(arnet.promlist)
+    #FIXME
+    del code[choice-88:choice+168]
     return code
 
 if __name__ == '__main__':
+    import ConfigParser
+    from rencode import DMAgent, ReNCoDeProb
+    arncfg = ConfigParser.ConfigParser()
+    arncfg.readfp(open('../configfiles/arnsim-rencode.cfg'))
     log.setLevel(logging.DEBUG)
     ch = logging.StreamHandler()
     ch.setLevel(logging.DEBUG)
     log.addHandler(ch)
+    p = ReNCoDeProb(None)
     #test inner variation operators
     a = BitStream('0b' + '00011100011100011100')
     print a.bin
@@ -153,6 +162,16 @@ if __name__ == '__main__':
     delete(a, 15)
     print a.bin
 
+    #test genecopy and delete
+    a = DMAgent(arncfg, p)
+    print "Parent: ", a.genotype.promlist
+    b = DMAgent(arncfg,p,genecopy(BitStream(a.genotype.code),
+                                  arnet = a.genotype))
+    print "Offspring: ", b.genotype.promlist
+    c = DMAgent(arncfg,p,genedelete(BitStream(a.genotype.code),
+                                  arnet = a.genotype))
+    print "Offspring: ", c.genotype.promlist
+    exit(0)
     #test crossover operators
     class Agent: pass
     a = Agent()
@@ -171,11 +190,8 @@ if __name__ == '__main__':
     print f.bin
 
     #test gene oriented crossover
-    import ConfigParser
-    from rencode import DMAgent, ReNCoDeProb
-    arncfg = ConfigParser.ConfigParser()
-    arncfg.readfp(open('../configfiles/arnsim-rencode.cfg'))
-    p = ReNCoDeProb(None)
+
+
     a = DMAgent(arncfg, p)
     b = DMAgent(arncfg, p)
     print "A: ", a.genotype.promlist
