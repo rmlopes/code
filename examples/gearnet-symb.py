@@ -28,7 +28,7 @@ def evaluate(phenotype, target, inputs, grm = grammardb._base_grammar):
     #print circuit
     for k in grm.iterkeys():
         #print 'key:', k
-        if k != 'inp' and circuit.find(k) != -1:
+        if circuit.find(k) != -1:
             return 1e9
 
     errors = [abs(target(inp) -
@@ -48,8 +48,8 @@ if __name__ == '__main__':
     evalfun = partial(evaluate,
                       target=kozapolynomial,
                       inputs=list(drange(-1,1.1,.1)),
-                      grm = grammardb._fixed_grammar)
-    p = Prob(evalfun, grammardb._fixed_grammar, ['expr'])
+                      grm = grammardb._fixed_grammar_b)
+    p = Prob(evalfun, grammardb._fixed_grammar_b, ['expr'])
 
     try:
         agentclass = getattr(__import__('__main__'),sys.argv[2])

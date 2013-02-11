@@ -38,10 +38,11 @@ def bindparams(config,fun):
                    simstep = config.getint('default','simstep'),
                    silentmode = config.getboolean('default','silentmode'),
                    initdm = config.getint('default','initdm'),
-                   mutratedm = config.getfloat('default','mutratedm'))
+                   mutratedm = config.getfloat('default','mutratedm'),
+                   overlapgenes = config.getboolean('default','overlapgenes'))
 
-def generatechromo(initdm, mutratedm, genesize,
-                   promoter, excite_offset, **bindargs):
+def generatechromo(initdm, mutratedm, genesize, promoter,
+                   excite_offset, overlapgenes,**bindargs):
     '''
     Default function to generate an ARN chromosome.
     To be used with bindparams.
@@ -52,11 +53,13 @@ def generatechromo(initdm, mutratedm, genesize,
         genome = BitStream(float=random.random(),length=32);
         for i in range(0,initdm):
             genome = dm_event(genome, mutratedm)
-        promlist = buildpromlist(genome, excite_offset, genesize, promoter)
+        promlist = buildpromlist(genome, excite_offset, genesize,
+                                 promoter, overlapgenes)
         valid = len(promlist)
     return genome
 
-def generatechromo_rnd( genomesize = 4096, **bindargs):
+def generatechromo_rnd( genomesize, mutratedm, genesize, promoter,
+                        excite_offset, overlapgenes, **bindargs):
     '''
     Default function to generate an ARN chromosome.
     To be used with bindparams.
@@ -68,8 +71,8 @@ def generatechromo_rnd( genomesize = 4096, **bindargs):
         while len(genome)<genomesize:
             genome += BitStream(float=random.random(),length=64)
 
-        promlist = buildpromlist(genome, bindargs['excite_offset'],
-                                 bindargs['genesize'], bindargs['promoter'])
+        promlist = buildpromlist(genome, excite_offset,
+                                 genesize, promoter, overlapgenes)
         valid = len(promlist)
     return genome
 
@@ -85,14 +88,19 @@ def displayARNresults(proteins, ccs, step=1):
     plt.savefig('ccoutput.png')
     call(["open", "ccoutput.png"])
 
-def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
+def buildpromlist(genome, excite_offset, genesize, promoter,
+                  overlapgenes, **kwargs):
     gene_index = genome.findall(BitStream(bin=promoter))
     promsize = len(promoter)
     promlist = filter( lambda index:
                        int(excite_offset) <= index <  (genome.length-(int(genesize)+promsize )),
                        gene_index)
+    genegap = 32 + genesize + 64
+    if overlapgenes:
+            #promotor size only
+            genegap = 32
     proms = reduce(lambda indxlst, indx:
-                   indxlst + [indx] if indx-indxlst[-1] >= 32 + genesize + 64 else indxlst,
+                   indxlst + [indx] if indx-indxlst[-1] >= genegap else indxlst,
                    promlist[1:],
                    promlist[:1])
     return proms

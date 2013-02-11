@@ -43,6 +43,17 @@ _fixed_grammar = { 'expr': [['var', 'expr2'],
                    'var': [['inp'],
                            ['1.0']]}
 
+_fixed_grammar_b = { 'expr': [['var', 'expr2'],
+                              ['(','var','expr2', ')']],
+                   'expr2': [['op', 'var', 'expr2'],
+                             ['op', 'var']],
+                   'op': [['+'],
+                          ['-'],
+                          ['*'],
+                          ['|div|']],
+                   'var': [['inp'],
+                           ['1.0']]}
+
 ant_grammar = { 'code': [['line'],
                          ['line','code']],
                 'line': [['op'],

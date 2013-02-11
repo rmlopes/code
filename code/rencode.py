@@ -14,9 +14,9 @@ log = logging.getLogger(__name__)
 class ReNCoDeProb(Problem):
         #read fun set from config file??
         funs = [ 'add_', 'sub_', 'mul_', 'div_']
-        terms = [ 'inputs[0]' ]
+        terms = [ 'inputs[0]','1.0' ]
         labels = {'add_':'+', 'sub_':'-', 'mul_':'*', 'div_':'/',
-                  'inputs[0]':'x'}
+                  'inputs[0]':'x', 'inputs[1]':'1.0'}
         arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
         feedback = False
         def __init__(self, evaluate, **kwargs):
