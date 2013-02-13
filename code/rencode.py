@@ -14,7 +14,7 @@ log = logging.getLogger(__name__)
 class ReNCoDeProb(Problem):
         #read fun set from config file??
         funs = [ 'add_', 'sub_', 'mul_', 'div_']
-        terms = [ 'inputs[0]','1.0' ]
+        terms = [ 'inputs[0]' ]#,'1.0' ]
         labels = {'add_':'+', 'sub_':'-', 'mul_':'*', 'div_':'/',
                   'inputs[0]':'x', 'inputs[1]':'1.0'}
         arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
@@ -25,19 +25,6 @@ class ReNCoDeProb(Problem):
                 except KeyError:
                     pp = printdotcircuit
                 Problem.__init__(self, evaluate, defaultnodemap, pp)
-
-
-class ClassifProb(ReNCoDeProb):
-    #extrafuns = ['exp_','min_','max_','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
-    extrafuns = ['exp_','min_','max_','log_']
-    #,'tanh_','sin_','cos_','sinh_','cosh_','tan_']
-    def __init__(self, evaluate, numfeat, **kwargs):
-        self.labels = None
-        ReNCoDeProb.__init__(self,evaluate, **kwargs)
-        self.terms.extend(["inputs[%i]"%i
-                           for i in range(1,numfeat)])
-        self.funs.extend(self.extrafuns)
-        self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
 
 
 ### Agent model to use with this CoDe module
@@ -55,7 +42,7 @@ class ReNCoDeAgent(Agent):
                 self.genotype = arnet
                 self.phenotype = buildcircuit(self,problem)
                 self.problem = problem
-                self.fitness = 1e4
+                self.fitness = 1e6
 
         def __str__(self):
                 return "### Agent ###\n%s\n%s: %f" % (self.arn,self.phenotype,
