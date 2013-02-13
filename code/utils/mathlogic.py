@@ -93,7 +93,7 @@ def reciprocalsum(*args):
         for a in args:
             if a == 0:
                 a = 1e6
-            sum += (1/a)
+            sum += (1.0/a)
         return sum
 
 #For creativity, centered u=0, with a = 1, sigma=.2
