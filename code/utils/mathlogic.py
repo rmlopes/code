@@ -58,8 +58,8 @@ def cosh_(*args):
         return 1.0
 
 def log_(*args):
-    x = sum(args)/float(len(args))
-    if x <= 0: return 0
+    x = sum(args)#/float(len(args))
+    if x <= 0: return 1e6
     return log(x)
 
 def exp_(*args):
@@ -67,11 +67,14 @@ def exp_(*args):
     try:
         return exp(x)
     except:
-        return 1
+        return 1e6
 
 def sqrt_(*args):
     x = sum(args)
-    return sqrt(x)
+    try:
+            return sqrt(x)
+    except:
+        return 1e6
 
 def max_(*inputs):
     return max(inputs)
@@ -83,7 +86,15 @@ def sigmoid(x):
     try:
         return 1.0 / (1.0 + exp(-x))
     except OverflowError:
-        return 1.0
+        return 1e6
+
+def reciprocalsum(*args):
+        sum = 0
+        for a in args:
+            if a == 0:
+                a = 1e6
+            sum += (1/a)
+        return sum
 
 #For creativity, centered u=0, with a = 1, sigma=.2
 def gaussian(*args):
