@@ -32,8 +32,8 @@ class ReNCoDeAgent(Agent):
         genotype = None
         phenotype = None
         fitness = None
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
-                Agent.__init__(self, parentfit)
+        def __init__(self, config, problem, gcode = None, parent = None):
+                Agent.__init__(self, parent)
                 generator = arn.bindparams(config, self.generate)
                 if gcode == None:
                         gcode = generator()
@@ -52,15 +52,15 @@ class ReNCoDeAgent(Agent):
             return self.problem.print_(self.phenotype)
 
 class DMAgent(ReNCoDeAgent):
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parent = None):
                 self.generate = arn.generatechromo
-                ReNCoDeAgent.__init__(self, config, problem, gcode, parentfit)
+                ReNCoDeAgent.__init__(self, config, problem, gcode, parent)
 
 class RndAgent(ReNCoDeAgent):
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parent = None):
             self.generate = partial(arn.generatechromo_rnd,
                     genomesize = 32 * pow(2,config.getint('default','initdm')))
-            ReNCoDeAgent.__init__(self, config, problem, gcode, parentfit)
+            ReNCoDeAgent.__init__(self, config, problem, gcode, parent)
 
 def regressionfun(mapped, node_inputs, inputs ):
         if not node_inputs:

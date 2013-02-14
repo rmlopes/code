@@ -16,9 +16,54 @@ import cPickle as pickle
 
 log = logging.getLogger(__name__)
 
-evologhead = str('Best\tNumProteins\tNumFunctions\tNumInactive\t'+
-                 'GeneSize\tEvaluations\tAvgBest\tAvgNumProteins\t'+
-                 'AvgNumFunctions\tAvgGeneSize\tMutRate')
+class DefaultRunLog:
+    evologhead = str('Best\tNumProteins\tNumFunctions\tNumInactive\t'+
+                     'GeneSize\tEvaluations\tAvgBest\tAvgNumProteins\t'+
+                     'AvgNumFunctions\tAvgGeneSize\tMutRate')
+    def __init__(self, mainlogger):
+        self.main = mainlogger
+        self.evolog = logging.getLogger('evolution')
+        self.circuitlog = logging.getLogger('circuit')
+        self.arnlog = logging.getLogger('arntofile')
+        self.evolog.critical(self.evologhead)
+
+    def step(self, parents, **kwargs):
+        log.info('Logging...')
+        best = parents[0]
+        parentpsize = float(len(parents))
+        tolog = [best.fitness]
+        tolog.append(len(best.genotype.promlist))
+        tolog.append(len(best.phenotype))
+        tolog.append(tolog[-2] - tolog[-1])
+        tolog.append(len(best.genotype.code))
+        tolog.append(kwargs['numevals'])
+        tolog.append(sum([p.fitness
+                          for p in parents])/parentpsize)
+        tolog.append(sum([len(p.genotype.promlist)
+                          for p in parents])/parentpsize)
+        tolog.append(sum([len(p.phenotype)
+                          for p in parents])/parentpsize)
+        tolog.append(sum([len(p.genotype.code)
+                          for p in parents])/parentpsize)
+        #tolog.append(self.mutrate)
+        self.evolog.critical(
+                reduce(lambda m,n: str(m)+'\t'+str(n), tolog))
+
+    def dumpcircuit(self, best):
+        self.circuitlog.critical(pickle.dumps(best.pickled()))
+
+    def dumpancestortree(self, best):
+        ancestorlog = logging.getLogger('ancestortrace')
+        ancestorlog.critical(pickle.dumps(best.pickled()))
+        self._print_ancestors(best, ancestorlog)
+
+    def _print_ancestors(self, ind, alog):
+        parent = ind.parent
+        if not parent:
+            return
+        else:
+            alog.critical(pickle.dumps(parent.pickled()))
+            self._print_ancestors(parent, alog)
 
 class Agent:
         __metaclass__ = ABCMeta
@@ -30,12 +75,14 @@ class Agent:
         @abstractproperty
         def fitness(self): pass
 
-        def __init__(self, pfit):
-                self.parentfit = pfit
+        def __init__(self, parent = None):
+                self.parent = parent
+                #for backward compatibility
+                if parent:
+                        self.parentfit = parent.fitness
 
         def pickled(self):
             return self
-
 
 #Problem base for htis module
 class Problem:
@@ -66,17 +113,18 @@ def register_adf(adfcount,adf,problem):
 
 ### Main class of the library
 class EvoDevoWorkbench:
-        evolog = logging.getLogger('evolution')
-        circuitlog = logging.getLogger('circuit')
-        arnlog = logging.getLogger('arntofile')
 
-        def __init__(self, configfname, problem, agentclass):
+
+        def __init__(self, configfname, problem, agentclass,
+                     logmanager = DefaultRunLog):
                 config = ConfigParser.ConfigParser()
                 config.readfp(open(configfname))
 
                 logging.config.fileConfig(config.get('default','logconf'))
                 log.info('Setting up evolutionary workbench...')
-                self.evolog.critical(evologhead)
+                self.runlog = logmanager(log)
+                self.trace =  config.getboolean('default',
+                                                'ancestortrace')
                 mainmod = __import__('__main__')
 
                 self.problem = problem
@@ -196,7 +244,7 @@ class EvoDevoWorkbench:
 
         def _reproduct_agents(self, p1, p2):
             return [self.agentclass(gcode = self.mutate_(o),
-                                    parentfit = p1.fitness,
+                                    parent = p1,
                                     problem = self.problem)
                     for o in self.xover_(p1,
                                          p2)]
@@ -207,7 +255,7 @@ class EvoDevoWorkbench:
             return self.agentclass( gcode = self.mutate_(
                     op_(gcodeclass(parent.genotype.code), *self.opargs,
                         arnet = parent.genotype)),
-                                    parentfit = parent.fitness,
+                                    parent = parent,
                                     problem = self.problem)
 
         def run(self, terminate = (lambda x,y: x <= 1e-3 or y <= 0)):
@@ -244,14 +292,15 @@ class EvoDevoWorkbench:
                                         #(issue 1398)
                                 #self.circuitlog.critical(
                                  #       pickle.dumps(self.best,2))
-                                self.circuitlog.critical(pickle.dumps(
-                                        self.best.pickled()))
+                                self.runlog.dumpcircuit( self.best )
                                 log.info('Best:\n%s',
                                          self.problem.print_(self.best.phenotype))
 
-                        self._logiteration()
+                        self.runlog.step(self.parents, numevals=self.numevals)
                         self.itercount += 1
                 print str(clock()-start)+ "sec."
+                if self.trace:
+                    self.runlog.dumpancestortree(self.best)
                 return self.best
 
         def adaptmutrate(self):
@@ -277,25 +326,7 @@ class EvoDevoWorkbench:
                                        mutrate = self.mutrate)
 
 
-        def _logiteration(self):
-                log.info('Logging...')
-                tolog = [self.best.fitness]
-                tolog.append(len(self.best.genotype.promlist))
-                tolog.append(0)#len(self.best.phenotype))
-                tolog.append(0)#tolog[-2] - tolog[-1])
-                tolog.append(len(self.best.genotype.code))
-                tolog.append(self.numevals)
-                tolog.append(sum([p.fitness
-                                  for p in self.parents])/self.parentpsize)
-                tolog.append(sum([len(p.genotype.promlist)
-                                  for p in self.parents])/self.parentpsize)
-                tolog.append(0)#sum([len(p.phenotype)
-                                 # for p in self.parents])/self.parentpsize)
-                tolog.append(sum([len(p.genotype.code)
-                                  for p in self.parents])/self.parentpsize)
-                tolog.append(self.mutrate)
-                self.evolog.critical(
-                        reduce(lambda m,n: str(m)+'\t'+str(n), tolog))
+
 
 
 def _idle(gcode, *args, **kwargs):
