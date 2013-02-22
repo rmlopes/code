@@ -54,10 +54,8 @@ class Agent:
             self.mutlog[0] += total
             self.mutlog[1] += neutral
 
-        def pickled(self):
-            return self
+        def pickled(self): return self
 
-        #@abstractproperty
         def print_(self): return str(self)
 
 #Problem base for htis module
@@ -77,10 +75,6 @@ class Problem:
                 self.eval_ = evaluate
                 #self.print_ = partial(print_, labels = self.labels)
                 self.arity = dict(zip(self.funs,[0]*len(self.funs)))
-
-        def setdevice(self, codemodule):
-            self.eval_ = partial(self.eval_,
-                                 device = codemodule)
 
 
 def register_adf(adfcount,adf,problem):
@@ -128,7 +122,8 @@ class EvoDevoWorkbench:
                 aclass = config.get('default','agent').split('.')
                 mod = aclass[0] + "." + aclass[1]
                 self.device = __import__(mod,fromlist=aclass[2])
-                self.problem.setdevice(self.device)
+                self.problem.eval_ = partial(self.problem.eval_,
+                                             device = self.device)
                 log.info("CoDe module: %s"%(mod,))
                 log.info("Agent class: %s"%(aclass[2],))
                 self.agentclass = partial(getattr(self.device, aclass[2]),

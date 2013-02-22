@@ -6,6 +6,7 @@ from arn import *
 import rencode
 from evodevo import Problem, Agent
 from utils import *
+from utils.mathlogic import *
 from utils.bitstrutils import *
 import copy
 
@@ -78,16 +79,19 @@ class GEARNetAgent(Agent):
         def pickled(self):
             return self.genotype.code.bin
 
+        def print_(self):
+            return self.phenotype.circuit
+
 class DMAgent(GEARNetAgent):
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parent = None):
                 self.generate = generatechromo
-                GEARNetAgent.__init__(self, config, problem, gcode, parentfit)
+                GEARNetAgent.__init__(self, config, problem, gcode, parent)
 
 class RndAgent(GEARNetAgent):
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parent = None):
             self.generate = partial(generatechromo_rnd,
                     genomesize = 32 * pow(2,config.getint('default','initdm')))
-            GEARNetAgent.__init__(self, config, problem, gcode, parentfit)
+            GEARNetAgent.__init__(self, config, problem, gcode, parent)
 
 def replace( intnum, key, g):
     i = intnum % len(g[key])
@@ -105,6 +109,11 @@ class Phenotype:
                               self.translate(copy.deepcopy(self.int_sequence),
                                              problem.grammar,problem.start))
         #print self.circuit
+    def __len__(self):
+        return len(self.int_sequence)
+
+    def __call__(self, *inputs):
+        return eval(self.circuit)
 
     def extract_int_seq(self):
         sz = 8

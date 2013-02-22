@@ -10,57 +10,19 @@ from utils.mathlogic import *
 
 log = logging.getLogger(__name__)
 
-### Problem base to use with ReNCoDe
-class ReNCoDeProb(Problem):
-        #read fun set from config file??
-        funs = [ 'add_', 'sub_', 'mul_', 'div_']
-        terms = [ 'inputs[0]' ]#,'1.0' ]
-        labels = {'add_':'+', 'sub_':'-', 'mul_':'*', 'div_':'/',
-                  'inputs[0]':'x', 'inputs[1]':'1.0'}
-        arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
-        feedback = False
-        def __init__(self, evaluate, **kwargs):
-                try:
-                    pp = kwargs['printf']
-                except KeyError:
-                    pp = printdotcircuit
-                Problem.__init__(self, evaluate, defaultnodemap, pp)
-
-
-### Agent model to use with this CoDe module
-class ReNCoDeAgent(Agent):
-        genotype = None
-        phenotype = None
-        fitness = None
-        def __init__(self, config, problem, gcode = None, parent = None):
-                Agent.__init__(self, parent)
-                generator = arn.bindparams(config, self.generate)
-                if gcode == None:
-                        gcode = generator()
-
-                arnet = arn.ARNetwork(gcode,config)
-                self.genotype = arnet
-                self.phenotype = buildcircuit(self,problem)
-                self.problem = problem
-                self.fitness = 1e6
-
-        def __str__(self):
-                return "### Agent ###\n%s\n%s: %f" % (self.arn,self.phenotype,
-                                                      self.fitness)
-
-        def pickled(self):
-            return self.problem.print_(self.phenotype)
-
-class DMAgent(ReNCoDeAgent):
-        def __init__(self, config, problem, gcode = None, parent = None):
-                self.generate = arn.generatechromo
-                ReNCoDeAgent.__init__(self, config, problem, gcode, parent)
-
-class RndAgent(ReNCoDeAgent):
-        def __init__(self, config, problem, gcode = None, parent = None):
-            self.generate = partial(arn.generatechromo_rnd,
-                    genomesize = 32 * pow(2,config.getint('default','initdm')))
-            ReNCoDeAgent.__init__(self, config, problem, gcode, parent)
+def printdotcircuit(circuit, labels=None):
+    circuit = circuit.circuit
+    s = 'digraph best {\nordering = out;\n'
+    for c in circuit:
+        s += '%i [label="%s"];\n' % (c[0], c[1])# if not labels
+        #else labels[c[1]])
+        for inp in c[2]:
+            aux = "dir=back"
+            if inp < 0:
+                aux += ",style=dotted"
+            s += '%i -> %i [%s];\n' % (c[0],abs(inp),aux)
+    s += '}'
+    return s
 
 def regressionfun(mapped, node_inputs, inputs ):
         if not node_inputs:
@@ -112,6 +74,8 @@ def evaluatecircuit(circuit, circuitmap, resultdict, *inputs,**kwargs):
         nout = kwargs['nout']
     except KeyError:
         nout = 1
+    if resultdict == None:
+        resultdict = dict()
     for i in range(len(circuit)):
         inputvalues =  [resultdict[abs(v)] for v in circuit[-1-i][2]]
         result = circuitmap(circuit[-1-i][1],
@@ -266,19 +230,72 @@ def printcircuit(circuit):
                                              ""))
         return s[:-2]
 
-def printdotcircuit(circuit, labels=None):
-        s = 'digraph best {\nordering = out;\n'
-        for c in circuit:
-                s += '%i [label="%s"];\n' % (c[0], c[1])# if not labels
-                                             #else labels[c[1]])
-                for inp in c[2]:
-                        aux = "dir=back"
-                        if inp < 0:
-                                aux += ",style=dotted"
-                        s += '%i -> %i [%s];\n' % (c[0],abs(inp),aux)
-        s += '}'
-        return s
+### Problem base to use with ReNCoDe
+class ReNCoDeProb(Problem):
+        #read fun set from config file??
+        funs = [ 'add_', 'sub_', 'mul_', 'div_']
+        terms = [ 'inputs[0]' ]#,'1.0' ]
+        labels = {'add_':'+', 'sub_':'-', 'mul_':'*', 'div_':'/',
+                  'inputs[0]':'x', 'inputs[1]':'1.0'}
+        arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
+        feedback = False
+        def __init__(self, evaluate, nodemap = defaultnodemap):
+                Problem.__init__(self, evaluate)
+                self.nodemap_ = nodemap
 
+#callable phenotype
+class P:
+    def __init__(self, circuit, problem):
+        self.circuit = circuit
+        self.problem = problem
+        #memory (disabled by default)
+        self.memory = None
+
+    def __call__(self, *inputs):
+        return evaluatecircuit(self.circuit, nnlikefun, self.memory, *inputs)
+
+    def __len__(self):
+        return len(self.circuit)
+
+### Agent model to use with this CoDe module
+class ReNCoDeAgent(Agent):
+        genotype = None
+        phenotype = None
+        fitness = None
+        #print_ = None
+        def __init__(self, config, problem, gcode = None, parent = None):
+                Agent.__init__(self, parent)
+                generator = arn.bindparams(config, self.generate)
+                if gcode == None:
+                        gcode = generator()
+
+                arnet = arn.ARNetwork(gcode,config)
+                self.genotype = arnet
+                self.phenotype = P(buildcircuit(self,problem), problem)
+                self.problem = problem
+                self.fitness = 1e6
+
+        def __str__(self):
+                return "### Agent ###\n%s\n%s: %f" % (self.arn,self.phenotype,
+                                                      self.fitness)
+
+        def pickled(self):
+            return self.print_()
+
+        def print_(self):
+            return printdotcircuit(self.phenotype)
+
+
+class DMAgent(ReNCoDeAgent):
+        def __init__(self, config, problem, gcode = None, parent = None):
+                self.generate = arn.generatechromo
+                ReNCoDeAgent.__init__(self, config, problem, gcode, parent)
+
+class RndAgent(ReNCoDeAgent):
+        def __init__(self, config, problem, gcode = None, parent = None):
+            self.generate = partial(arn.generatechromo_rnd,
+                    genomesize = 32 * pow(2,config.getint('default','initdm')))
+            ReNCoDeAgent.__init__(self, config, problem, gcode, parent)
 
 ###########################################################################
 ### Test                                                                ###

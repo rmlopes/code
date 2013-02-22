@@ -5,6 +5,7 @@ from code.utils.mathlogic import *
 from code.evodevo import EvoDevoWorkbench,  Problem
 from code.utils.config import parsecmd, loadconfig
 from code.rencode import ReNCoDeProb, defaultnodemap
+from code.grammars import grammardb
 import logging
 
 logging.basicConfig()
@@ -53,17 +54,15 @@ def evaluatennlike(circuit, target, inputs):
     return 1e6 if math.isinf(sum_) else sum_
 
 #device is the CoDe module, deduced from the agent class full name
-def evaluatekeijzer(circuit, target, inputs, device, printY = False):
+def evaluatekeijzer(circuit, target, inputs, printY = False):
         if len(circuit) == 0:
             return 1e6
         #mod = __import__(code, fromlist=['evaluatecircuit'])
         #agentclass = getattr(mod, 'evaluatecircuit')
 
         ty_tuples = map(lambda x: (target(x),
-                                   device.evaluatecircuit(circuit,
-                                                          device.nnlikefun,
-                                                          dict(),x)),
-                               inputs)
+                                   circuit(x)),
+                        inputs)
         targets, outputs = zip(*ty_tuples)
 
         if printY:
@@ -94,23 +93,22 @@ def evaluatekeijzer(circuit, target, inputs, device, printY = False):
         sum([pow(y - t,2) for t,y in ty_tuples])/float(len(ty_tuples))
 
 def wrapevaluate(circuit, target, inputs, device, printY = False, test = False):
-    if device.__name__ == 'code.rencode':
-        return evaluatekeijzer(circuit, target, inputs, device, printY)
+    if device.__name__ == 'code.rencode' or device.__name__ == 'code.gearnet':
+        return evaluatekeijzer(circuit, target, inputs, printY)
     else:
         if not test:
             bestfit = 1e6
             outidx = 0
             for i in range(len(circuit.products)):
-                fit = evaluatekeijzer(circuit.getcircuit(i),
-                                      target, inputs, device, printY)
+                circuit.output_idx = i
+                fit = evaluatekeijzer(circuit,target, inputs, printY)
                 if fit < bestfit:
                     bestfit = fit
                     outidx = i
             circuit.output_idx = outidx
         else:
             print 'output index is ', circuit.output_idx
-            bestfit = evaluatekeijzer(circuit.getcircuit(circuit.output_idx),
-                                      target, inputs, device, printY)
+            bestfit = evaluatekeijzer(circuit,target, inputs, printY)
         return bestfit
 
 class KeijzerProb(ReNCoDeProb):
@@ -130,6 +128,9 @@ class KeijzerProb(ReNCoDeProb):
                 self.nout = 1
                 self.ninp = 1
                 #self.nodemap_ = defaultnodemap
+                #for gearnet
+                self.grammar = grammardb._fixed_grammar_b
+                self.start = ['expr']
 
 if __name__ == '__main__':
     #log.setLevel(logging.INFO)

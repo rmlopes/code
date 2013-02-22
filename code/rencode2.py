@@ -4,12 +4,16 @@ from bitstring import BitStream
 import math
 import arn
 import rencode
+from rencode import evaluatecircuit, nnlikefun
 from arnmiguel import *
 from evodevo import Problem, Agent
 from utils import *
 from utils.bitstrutils import *
 
 log = logging.getLogger(__name__)
+
+#evaluatecircuit = partial(rencode.evaluatecircuit,
+ #                         nout = 1)
 
 def printrencode2(phenotype, **kwargs):
     return rencode.printdotcircuit(
@@ -67,16 +71,19 @@ class ARNGPAgent(Agent):
         def pickled(self):
             return (self.genotype.code.bin,self.phenotype.output_idx)
 
+        def print_(self):
+            return printmultiplecircuit(self.phenotype)
+
 class DMAgent(ARNGPAgent):
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parent = None):
                 self.generate = arn.generatechromo
-                ARNGPAgent.__init__(self, config, problem, gcode, parentfit)
+                ARNGPAgent.__init__(self, config, problem, gcode, parent)
 
 class RndAgent(ARNGPAgent):
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
+        def __init__(self, config, problem, gcode = None, parent = None):
             self.generate = partial(arn.generatechromo_rnd,
                     genomesize = 32 * pow(2,config.getint('default','initdm')))
-            ARNGPAgent.__init__(self, config, problem, gcode, parentfit)
+            ARNGPAgent.__init__(self, config, problem, gcode, parent)
 
 class Phenotype:
     def __init__(self, arnet, problem):
@@ -122,6 +129,12 @@ class Phenotype:
         #several options to get the connections
         #start by using match strength using positive/negative to
         #give the direction
+    def __len__(self, index = 0):
+        return len(self.circuits[index])
+
+    def __call__(self, *inputs):
+        return evaluatecircuit(self.getcircuit(self.output_idx),
+                               nnlikefun,dict(), *inputs)
 
     def getcircuit(self, index=0):
         return self.circuits[index]
