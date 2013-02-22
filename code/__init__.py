@@ -1,8 +1,9 @@
 import os
 import logging
 
-log = logging.getLogger(__name__)
-
+logging.getLogger('code').addHandler(logging.NullHandler())
+FORMAT = '%(name)s:%(levelname)s:  %(message)s'
+logging.basicConfig(format=FORMAT)
 #log.info('importing WriteRotateFileHandler...')
 #from utils.filestuff import WriteRotateFileHandler
 

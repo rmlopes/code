@@ -10,85 +10,13 @@ import copy
 from bitstring import BitStream
 from utils import *
 from utils.bitstrutils import *
+from utils.filestuff import DefaultRunLog
 from numpy import cumsum
 from abc import *
 import cPickle as pickle
+import sys
 
 log = logging.getLogger(__name__)
-
-class DefaultRunLog:
-    evologhead = str('Best\tNumProteins\tNumFunctions\tNumInactive\t'+
-                     'GeneSize\tEvaluations\tAvgBest\tAvgNumProteins\t'+
-                     'AvgNumFunctions\tAvgGeneSize\tMutRate')
-    def __init__(self, mainlogger):
-        self.main = mainlogger
-        self.evolog = logging.getLogger('evolution')
-        self.circuitlog = logging.getLogger('circuit')
-        self.arnlog = logging.getLogger('arntofile')
-        self.evolog.critical(self.evologhead)
-
-    def step(self, parents, **kwargs):
-        log.info('Logging...')
-        best = parents[0]
-        parentpsize = float(len(parents))
-        tolog = [best.fitness]
-        tolog.append(len(best.genotype.promlist))
-        tolog.append(len(best.phenotype))
-        tolog.append(tolog[-2] - tolog[-1])
-        tolog.append(len(best.genotype.code))
-        tolog.append(kwargs['numevals'])
-        tolog.append(sum([p.fitness
-                          for p in parents])/parentpsize)
-        tolog.append(sum([len(p.genotype.promlist)
-                          for p in parents])/parentpsize)
-        tolog.append(sum([len(p.phenotype)
-                          for p in parents])/parentpsize)
-        tolog.append(sum([len(p.genotype.code)
-                          for p in parents])/parentpsize)
-        #tolog.append(self.mutrate)
-        self.evolog.critical(
-                reduce(lambda m,n: str(m)+'\t'+str(n), tolog))
-
-    def dumpcircuit(self, best):
-        self.circuitlog.critical(pickle.dumps(best.pickled()))
-
-    def dumpancestortree(self, best):
-        ancestorlog = logging.getLogger('ancestortrace')
-        ancestorlog.critical(pickle.dumps(best.pickled()))
-        self._print_ancestors(best, ancestorlog)
-        print best.mutlog, best.oplog
-        print self._sum_mutations(best)
-        print self._sum_ops(best)
-
-    def _print_ancestors(self, ind, alog):
-        parent = ind.parent
-        if not parent:
-            return
-        else:
-            alog.critical(pickle.dumps(parent.pickled()))
-            self._print_ancestors(parent, alog)
-
-    def _sum_mutations(self, ind):
-        parent = ind.parent
-        if not parent:
-            return ind.mutlog
-        else:
-            pmuts = self._sum_mutations(parent)
-            return [ind.mutlog[0]+pmuts[0], ind.mutlog[1] + pmuts[1]]
-
-    def _sum_ops(self, ind):
-        parent = ind.parent
-        if not parent:
-            return ind.oplog
-        else:
-            p_oplog = self._sum_ops(parent)
-            for k,v in p_oplog.items():
-                try:
-                    ind.oplog[k][0] += v[0]
-                    ind.oplog[k][1] += v[1]
-                except KeyError:
-                    ind.oplog[k] = v
-            return ind.oplog
 
 class Agent:
         __metaclass__ = ABCMeta
@@ -129,6 +57,9 @@ class Agent:
         def pickled(self):
             return self
 
+        #@abstractproperty
+        def print_(self): return str(self)
+
 #Problem base for htis module
 class Problem:
         __metaclass__ = ABCMeta
@@ -141,12 +72,15 @@ class Problem:
         @abstractproperty
         def arity(self): pass
 
-        def __init__(self, evaluate, nodemap, print_):
-                self.nodemap_ = nodemap
+        def __init__(self, evaluate):
+                #self.nodemap_ = nodemap
                 self.eval_ = evaluate
-                self.print_ = partial(print_, labels = self.labels)
+                #self.print_ = partial(print_, labels = self.labels)
                 self.arity = dict(zip(self.funs,[0]*len(self.funs)))
 
+        def setdevice(self, codemodule):
+            self.eval_ = partial(self.eval_,
+                                 device = codemodule)
 
 
 def register_adf(adfcount,adf,problem):
@@ -158,12 +92,11 @@ def register_adf(adfcount,adf,problem):
 
 ### Main class of the library
 class EvoDevoWorkbench:
-        def __init__(self, configfname, problem, agentclass,
-                     logmanager = DefaultRunLog):
-                config = ConfigParser.ConfigParser()
-                config.readfp(open(configfname))
-
-                logging.config.fileConfig(config.get('default','logconf'))
+        def __init__(self, loadedconfig, problem, logmanager = DefaultRunLog,
+                     **kwargs):
+                config, self.arnconfig = loadedconfig
+                logging.config.fileConfig(config.get('default','logconf'),
+                                          disable_existing_loggers=False)
                 log.info('Setting up evolutionary workbench...')
                 self.runlog = logmanager(log)
                 self.trace =  config.getboolean('default',
@@ -189,10 +122,16 @@ class EvoDevoWorkbench:
                     self.xover_ = getattr(mainmod,self.xover_)
                     self.xrate = config.getfloat('default','xrate')
 
-                arncfg = config.get('default','arnconf')
-                self.arnconfig = ConfigParser.ConfigParser()
-                self.arnconfig.readfp(open(arncfg))
-                self.agentclass = partial(agentclass,
+                #arncfg = config.get('default','arnconf')
+                #self.arnconfig = ConfigParser.ConfigParser()
+                #self.arnconfig.readfp(open(arncfg))
+                aclass = config.get('default','agent').split('.')
+                mod = aclass[0] + "." + aclass[1]
+                self.device = __import__(mod,fromlist=aclass[2])
+                self.problem.setdevice(self.device)
+                log.info("CoDe module: %s"%(mod,))
+                log.info("Agent class: %s"%(aclass[2],))
+                self.agentclass = partial(getattr(self.device, aclass[2]),
                                           config = self.arnconfig,
                                           problem = problem )
                 self.mutrate = config.getfloat('default','mutrate')
@@ -374,7 +313,7 @@ class EvoDevoWorkbench:
                                  #       pickle.dumps(self.best,2))
                                 self.runlog.dumpcircuit( self.best )
                                 log.info('Best:\n%s',
-                                         self.problem.print_(self.best.phenotype))
+                                         self.best.print_())
 
                         self.runlog.step(self.parents, numevals=self.numevals)
                         self.itercount += 1
@@ -438,24 +377,7 @@ def _selectop(ops, rates):
                 if rnd < rates[i]:
                         return ops[i]
 
-def parse_args(argv):
-    inputfile = ''
-    outputfile = ''
-    try:
-        opts, args = getopt.getopt(argv,"hi:o:",["ifile=","ofile="])
-    except getopt.GetoptError:
-        print 'test.py -i <inputfile> -o <outputfile>'
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt == '-h':
-            print 'test.py -i <inputfile> -o <outputfile>'
-            sys.exit()
-        elif opt in ("-i", "--ifile"):
-            inputfile = arg
-        elif opt in ("-o", "--ofile"):
-            outputfile = arg
-            print 'Input file is "', inputfile
-            print 'Output file is "', outputfile
+
 ###########################################################################
 ### Test                                                                ###
 ###########################################################################
