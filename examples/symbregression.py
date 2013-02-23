@@ -68,12 +68,14 @@ def evaluatekeijzer(circuit, target, inputs, printY = False):
         if printY:
                 print "T: ", targets
                 print "Y: ", outputs
-        avgtarget = sum(targets)/float(len(targets))
-        avgoutput = sum(outputs)/float(len(outputs))
 
         try:
+            avgtarget = sum(targets)/float(len(targets))
+            avgoutput = sum(outputs)/float(len(outputs))
+
+
             bdenom = sum([pow(out - avgoutput,2)
-                      for out in outputs])
+                          for out in outputs])
         except OverflowError:
             return 1e6
 
