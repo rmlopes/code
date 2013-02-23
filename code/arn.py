@@ -41,6 +41,21 @@ def bindparams(config,fun):
                    mutratedm = config.getfloat('default','mutratedm'),
                    overlapgenes = config.getboolean('default','overlapgenes'))
 
+def neutralshare(arnet):
+    try:
+        proms = arnet.promlist + arnet.effectorproms
+    except:
+        proms = arnet.promlist
+
+    neutrals = proms[0] - 88
+    for i in range(0, len(proms),2):
+        if proms[i] == proms[-1]:
+            break
+        if proms[i] + 168 < proms[i+1] - 88:
+            neutrals += (proms[i+1] - 88) - (proms[i] + 168)
+    neutrals += len(arnet.code.bin) - (proms[-1]+168)
+    return float(neutrals) / len(arnet.code.bin)
+
 def generatechromo(initdm, mutratedm, genesize, promoter,
                    excite_offset, overlapgenes,**bindargs):
     '''
@@ -258,11 +273,13 @@ class ARNetwork:
          return ccs
 
     def nstepsim(self, n = 1000):
-
         self.simfun(self.proteins, self.ccs,
                     self.eweights, self.iweights,simtime=n)
         for i in range(len(self.proteins)):
             self.proteins[i][-1] = self.ccs[i]
+
+    def getneutralshare(self):
+        return neutralshare(self)
 
 ###########################################################################
 ### Test                                                                ###

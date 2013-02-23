@@ -12,6 +12,7 @@ from subprocess import call
 from utils import *
 from utils.bitstrutils import *
 from time import clock
+import arn
 from arn import bindparams, generatechromo, \
     buildproducts, getbindings, _getweights, _getSignalArray
 from extendedarn import displayARNresults
@@ -122,7 +123,7 @@ def _update(proteins, ccs, exciteweights, inhibitweights,delta,**kwargs):
     ccs[numreg:] += deltas[numreg:]
     #ccs/=total
 
-class ARNetwork:
+class ARNetwork(arn.ARNetwork):
     def __init__(self, gcode, config, **kwargs):
         self.code = gcode
         self.simtime = config.getint('default','simtime')

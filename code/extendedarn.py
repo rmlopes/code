@@ -12,6 +12,7 @@ from subprocess import call
 from utils import *
 from utils.bitstrutils import *
 from time import clock
+import arn
 from arn import bindparams, generatechromo, buildpromlist, \
     buildproducts, getbindings, _getweights, _getSignalArray
 
@@ -204,7 +205,7 @@ def _getweights(bindings, bindingsize, beta, **kwargs):
     return np.exp(weights)
 '''
 
-class ARNetwork:
+class ARNetwork(arn.ARNetwork):
     def __init__(self, gcode, config, **kwargs):
         self.code = gcode
         self.simtime = config.getint('default','simtime')
