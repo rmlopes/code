@@ -53,7 +53,12 @@ class DefaultRunLog:
         ancestorlog.critical(pickle.dumps(best.pickled()))
         self._print_ancestors(best, ancestorlog)
         print best.mutlog, best.oplog
-        print self._sum_mutations(best)
+        muts = self._sum_mutations(best)
+        print muts
+        print "Avg. Neutral mutations ratio: ", muts[1]/float(muts[0])
+        shares = self._sum_neutralshare(best)
+        print shares
+        print "Avg. Neutral portion of the genome", sum(shares) / len(shares)
         print self._sum_ops(best)
 
     def _print_ancestors(self, ind, alog):
@@ -85,6 +90,17 @@ class DefaultRunLog:
                 except KeyError:
                     ind.oplog[k] = v
             return ind.oplog
+
+    def _sum_neutralshare(self,ind):
+        parent = ind.parent
+        if not parent:
+            return [ind.genotype.getneutralshare()]
+        else:
+            #neutralsum = self._sum_neutralshare(parent)
+            l =  [ind.genotype.getneutralshare()]
+            l.extend(self._sum_neutralshare(parent))
+            return l
+
 
 #if __name__ == '__main__':
        # wrfh = WriteRotateFileHandler('../../results/code_circuit_0.save')

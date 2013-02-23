@@ -251,11 +251,17 @@ class P:
         #memory (disabled by default)
         self.memory = None
 
+    def getcircuit(self, *args):
+        return self.circuit
+
     def __call__(self, *inputs):
         return evaluatecircuit(self.circuit, nnlikefun, self.memory, *inputs)
 
     def __len__(self):
         return len(self.circuit)
+
+    def __eq__(self,other):
+        return self.circuit == other.circuit
 
 ### Agent model to use with this CoDe module
 class ReNCoDeAgent(Agent):

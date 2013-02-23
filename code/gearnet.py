@@ -55,8 +55,8 @@ class GEARNetAgent(Agent):
         genotype = None
         phenotype = None
         fitness = None
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
-                Agent.__init__(self, parentfit)
+        def __init__(self, config, problem, gcode = None, parent = None):
+                Agent.__init__(self, parent)
                 generator = bindparams(config, self.generate)
                 if gcode == None:
                     numtfs = 0
@@ -114,6 +114,9 @@ class Phenotype:
 
     def __call__(self, *inputs):
         return eval(self.circuit)
+
+    def __eq__(self,other):
+        return self.circuit == other.circuit
 
     def extract_int_seq(self):
         sz = 8

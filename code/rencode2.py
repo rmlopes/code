@@ -46,8 +46,8 @@ class ARNGPAgent(Agent):
         genotype = None
         phenotype = None
         fitness = None
-        def __init__(self, config, problem, gcode = None, parentfit = 1e4):
-                Agent.__init__(self, parentfit)
+        def __init__(self, config, problem, gcode = None, parent = None):
+                Agent.__init__(self, parent)
                 generator = bindparams(config, self.generate)
                 if gcode == None:
                     numprods = 0
@@ -135,6 +135,14 @@ class Phenotype:
     def __call__(self, *inputs):
         return evaluatecircuit(self.getcircuit(self.output_idx),
                                nnlikefun,dict(), *inputs)
+
+    def __eq__(self, other):
+        if len(self.circuits) != len(other.circuits):
+            return False
+        for i in range(len(self.circuits)):
+            if self.circuits[i] != other.circuits[i]:
+                return False
+        return True
 
     def getcircuit(self, index=0):
         return self.circuits[index]

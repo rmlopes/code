@@ -257,10 +257,17 @@ class EvoDevoWorkbench:
                 else:
                     #print idxmut
                     #print agent.genotype.promlist
+                    #FIXME: constants
                     neutralmut = 0
+                    try:
+                        promlist = agent.genotype.promlist + \
+                                   agent.genotype.effectorproms
+                    except:
+                        promlist = agent.genotype.promlist
+
                     for i in idxmut:
                         n = True
-                        for p in agent.genotype.promlist:
+                        for p in promlist:
                             if  p - 88 <= i[1] < p + 168:
                                 n = False
                                 break
