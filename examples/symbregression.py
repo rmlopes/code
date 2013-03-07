@@ -7,6 +7,7 @@ from code.utils.config import parsecmd, loadconfig
 from code.rencode import ReNCoDeProb, defaultnodemap
 from code.grammars import grammardb
 import logging
+import numpy
 
 logging.basicConfig()
 
@@ -68,37 +69,45 @@ def evaluatekeijzer(circuit, target, inputs, printY = False):
             if printY:
                 print "T: ", targets
                 print "Y: ", outputs
-
+                a = circuit.a
+                b = circuit.b
 
             avgtarget = sum(targets)/float(len(targets))
             avgoutput = sum(outputs)/float(len(outputs))
 
-
-            bdenom = sum([pow(out - avgoutput,2)
+            if not printY:
+                bdenom = sum([pow(out - avgoutput,2)
                           for out in outputs])
 
-            if bdenom == 0:
-                return 1e6
-            b = float(sum([(t - avgtarget) * (out - avgoutput)
-                 for t, out in ty_tuples])) / bdenom
-            if b == 1:
-                return 1e6
-            a = avgtarget - b * avgoutput
-            if a == 0:
-                return 1e6
 
-            shape_mse = 1.0/len(targets) * sum([pow(a + b*y - t,2)
-                                      for t,y in ty_tuples])
+                if bdenom == 0:
+                    return 1e6
+                b = float(sum([(t - avgtarget) * (out - avgoutput)
+                               for t, out in ty_tuples])) / bdenom
+                if b == 1:
+                    return 1e6
+                a = avgtarget - b * avgoutput
+                if a == 0:
+                    return 1e6
 
-            mse = sum([pow(y - t,2) for t,y in ty_tuples])/float(len(ty_tuples))
 
+                mse = 1.0/len(targets) * sum([pow(a + b*y - t,2)
+                                              for t,y in ty_tuples])
+            else:
+                mse = sum([pow((a +b*y) - t,2)
+                           for t,y in ty_tuples])/float(len(ty_tuples))
+            #n = len(ty_tuples)
+            #nrms = 100 * sqrt((n/(n-1))*shape_mse) / numpy.std(targets)
             if printY:
-                print 'a= ',a
-                print 'b= ',b
+                print 'a= ',circuit.a
+                print 'b= ',circuit.b
+            else:
+                circuit.a = a
+                circuit.b = b
         except OverflowError:
             return 1e6
 
-        return shape_mse #+ mse
+        return mse
 
 
 def wrapevaluate(circuit, target, inputs, device, printY = False, test = False):
