@@ -84,18 +84,15 @@ def evaluatekeijzer(circuit, target, inputs, printY = False):
                     return 1e6
                 b = float(sum([(t - avgtarget) * (out - avgoutput)
                                for t, out in ty_tuples])) / bdenom
-                if b == 1:
-                    return 1e6
+                #if b == 1:
+                 #   return 1e6
                 a = avgtarget - b * avgoutput
-                if a == 0:
-                    return 1e6
+                #if a == 0:
+                #    return 1e6
 
 
-                mse = 1.0/len(targets) * sum([pow(a + b*y - t,2)
-                                              for t,y in ty_tuples])
-            else:
-                mse = sum([pow((a +b*y) - t,2)
-                           for t,y in ty_tuples])/float(len(ty_tuples))
+            mse = 1.0/len(targets) * sum([pow(a + b*y - t,2)
+                               for t,y in ty_tuples])
             #n = len(ty_tuples)
             #nrms = 100 * sqrt((n/(n-1))*shape_mse) / numpy.std(targets)
             if printY:
