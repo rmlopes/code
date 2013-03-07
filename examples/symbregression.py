@@ -59,40 +59,47 @@ def evaluatekeijzer(circuit, target, inputs, printY = False):
             return 1e6
         #mod = __import__(code, fromlist=['evaluatecircuit'])
         #agentclass = getattr(mod, 'evaluatecircuit')
-
-        ty_tuples = map(lambda x: (target(x),
+        try:
+            ty_tuples = map(lambda x: (target(x),
                                    circuit(x)),
                         inputs)
-        targets, outputs = zip(*ty_tuples)
+            targets, outputs = zip(*ty_tuples)
 
-        if printY:
+            if printY:
                 print "T: ", targets
                 print "Y: ", outputs
 
-        try:
+
             avgtarget = sum(targets)/float(len(targets))
             avgoutput = sum(outputs)/float(len(outputs))
 
 
             bdenom = sum([pow(out - avgoutput,2)
                           for out in outputs])
+
+            if bdenom == 0:
+                return 1e6
+            b = float(sum([(t - avgtarget) * (out - avgoutput)
+                 for t, out in ty_tuples])) / bdenom
+            if b == 1:
+                return 1e6
+            a = avgtarget - b * avgoutput
+            if a == 0:
+                return 1e6
+
+            shape_mse = 1.0/len(targets) * sum([pow(a + b*y - t,2)
+                                      for t,y in ty_tuples])
+
+            mse = sum([pow(y - t,2) for t,y in ty_tuples])/float(len(ty_tuples))
+
+            if printY:
+                print 'a= ',a
+                print 'b= ',b
         except OverflowError:
             return 1e6
 
-        if bdenom == 0:
-                return 1e6
-        b = float(sum([(t - avgtarget) * (out - avgoutput)
-                 for t, out in ty_tuples])) / bdenom
-        if b == 1:
-            return 1e6
-        a = avgtarget - b * avgoutput
-        if a == 0:
-            return 1e6
+        return shape_mse #+ mse
 
-        shape_mse = 1.0/len(targets) * sum([pow(a + b*y - t,2)
-                                      for t,y in ty_tuples])
-        return shape_mse + \
-        sum([pow(y - t,2) for t,y in ty_tuples])/float(len(ty_tuples))
 
 def wrapevaluate(circuit, target, inputs, device, printY = False, test = False):
     if device.__name__ == 'code.rencode' or device.__name__ == 'code.gearnet':

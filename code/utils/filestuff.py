@@ -54,8 +54,8 @@ class DefaultRunLog:
         self._print_ancestors(best, ancestorlog)
         print best.mutlog, best.oplog
         muts = self._sum_mutations(best)
-        print muts
-        print "Avg. Neutral mutations ratio: ", muts[1]/float(muts[0])
+        if muts[0] != 0:
+                print "Avg. Neutral mutations ratio: ", muts[1]/float(muts[0])
         shares = self._sum_neutralshare(best)
         print shares
         print "Avg. Neutral portion of the genome", sum(shares) / len(shares)
