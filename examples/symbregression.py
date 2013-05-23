@@ -55,12 +55,16 @@ def evaluatennlike(circuit, target, inputs):
 
     return 1e6 if math.isinf(sum_) else sum_
 
-def mse_(a,b,tytuples):
+def mse_orig(a,b,tytuples):
     return (1.0/len(tytuples)) * sum([pow((a + b*y) - t,2)
                                    for t,y in tytuples])
 
+def mse_(a,b,tytuples):
+    return sum([abs((a + b*y) - t)
+                for t,y in tytuples])
+
 def nrms_(a,b,tytuples):
-    mse = mse_(a,b,tytuples)
+    mse = mse_orig(a,b,tytuples)
     n = len(tytuples)
     targets, outputs = zip(*tytuples)
     return 100 * sqrt(mse) /(max(targets)-min(targets))
@@ -100,7 +104,7 @@ def evaluatekeijzer(circuit, target, inputs, printY = False):
                 a = avgtarget - b * avgoutput
                 #if a == 0:
                 #    return 1e6
-                mse =  mse_(a,b,ty_tuples)
+                mse =  mse_orig(a,b,ty_tuples)
             else:
                 mse = nrms_(a,b,ty_tuples)
 
@@ -177,7 +181,7 @@ if __name__ == '__main__':
 
     cfg = loadconfig(parsecmd())
     edw = EvoDevoWorkbench(cfg,p)
-    edw.run(terminate = (lambda x,y: x <= 1e-10 or y <= 0))
+    edw.run(terminate = (lambda x,y: x <= 1e-6 or y <= 0))
     print wrapevaluate(edw.best.phenotype, target=Keijzer6,
                        inputs=list(range(1,121,1)),
                        device=edw.device,
