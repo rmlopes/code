@@ -13,7 +13,7 @@ fresults = evoresults[evoresults$Evaluations < 1000000,]
 fresults = fresults[fresults$Best < 0.001,]
 print(fresults[0,])
 dev.new()
-b = boxplot(Evaluations ~Experiment, fresults,cex.axis=CEXAXIS, outline = TRUE, main="Number of Evaluations to succeed")
+b = boxplot(Evaluations ~Experiment, fresults,las=3, outline = FALSE, main="Number of Evaluations to succeed")
 
 sumresults = describeBy(fresults$Evaluations, fresults$Experiment, mat=TRUE)
 dev.new()
@@ -110,7 +110,7 @@ sumfnum = describeBy(fresults$AvgNumFunctions, fresults$Experiment, mat=TRUE)
 dev.new()
 counts = data.frame(sumpnum$mean,sumfnum$mean)
 print(counts)
-barplot(t(counts), names.arg=sumpnum$group1,ylab="#Proteins/Functions", xlab='Experiment', main = "Number of Proteins and Functions in the Genomes", cex.names=CEXAXIS, col=c("darkblue","red"), legend = list('#Proteins','#Functions'), beside=TRUE, ylim=c(0,35))
+barplot(t(counts), names.arg=sumpnum$group1,ylab="#Proteins/Functions", xlab='Experiment', main = "Number of Proteins and Functions in the Genomes", las=3, col=c("darkblue","red"), legend = list('#Proteins','#Functions'), beside=TRUE, ylim=c(0,35))
 
 dev.new()
 plot(sumpnum$mean,sumresults$mean, ylab = "#Evaluations", xlab="#Proteins")
