@@ -157,8 +157,10 @@ class ARNetwork(arn.ARNetwork):
         else:
                 self.numeff = min(len(self.effectors),prob.nout)
 
-        #self.effectors = self.effectors[:self.numeff]
+        self.effectorproms = self.effectorproms[:self.numeff]
+        self.effectors = self.effectors[:self.numeff]
         self.numrec = min(len(self.receptorproms),prob.ninp)
+        self.receptorproms = self.receptorproms[:self.numrec]
         self.receptors = self.receptors[:self.numrec]
         self.ccs = []
         if self.promlist or self.effectorproms:
@@ -172,6 +174,7 @@ class ARNetwork(arn.ARNetwork):
 
         self.simfun = bindparams(config,iterate)
         self.delta = config.getfloat('default','delta')
+        #log.debug(self.snapshot())
         #self.output_idx = 0
 
     def _initializebindings(self, pbindfun):
@@ -254,6 +257,43 @@ class ARNetwork(arn.ARNetwork):
                     inputs = inputs)
         for i in range(len(self.proteins)):
             self.proteins[i][-1] = self.ccs[i]
+
+
+    def snapshot(self):
+        s = 'digraph best {\nordering = out;\n'
+        shape = 'hexagon'
+        labelidx = 0
+        for outprom in self.effectorproms:
+            s += '%i [label="%s",shape="hexagon"];\n' % (outprom, labelidx)
+            for e,h,i in zip(self.ebindings[:,self.numtf+self.numrec+labelidx],
+                             self.ibindings[:,self.numtf+self.numrec+labelidx],
+                             range(len(self.ebindings))):
+                if e > 0:
+                    s += '%i -> %i [dir=back];\n' % \
+                             (outprom, (self.promlist + self.receptorproms)[i])
+                if h > 0:
+                    s += '%i -> %i [dir=back,style=dotted];\n' % \
+                             (outprom, (self.promlist + self.receptorproms)[i])
+            labelidx += 1
+
+        for tf in self.promlist:
+            s += '%i [label="%s"];\n' % (tf, labelidx )
+            for e,h,i in zip(self.ebindings[:,labelidx],
+                             self.ibindings[:,labelidx],
+                             range(len(self.ebindings))):
+                if e > 0:
+                    s += '%i -> %i [dir=back];\n' % \
+                             (tf, (self.promlist + self.receptorproms)[i])
+                if h > 0:
+                    s += '%i -> %i [dir=back,style=dotted];\n' % \
+                             (tf, (self.promlist + self.receptorproms)[i])
+            labelidx += 1
+
+        for rec in self.receptorproms:
+            s += '%i [label="%s",shape="rectangle"];\n' % (rec, labelidx)
+            labelidx += 1
+        s += '}'
+        return s
 
 ################################################################################
 ### Test                                                                ########

@@ -316,6 +316,8 @@ class EvoDevoWorkbench:
                                 self.runlog.dumpcircuit( self.best )
                                 log.info('Best:\n%s',
                                          self.best.print_())
+                                log.debug(self.best.genotype.snapshot())
+                                log.debug(self.best.phenotype.printgraph())
 
                         self.runlog.step(self.parents, numevals=self.numevals)
                         self.itercount += 1

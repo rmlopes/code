@@ -196,6 +196,36 @@ class Phenotype:
                               []),
                    self.arnet.receptors)
 
+    def printgraph(self):
+        s = 'digraph best {\nordering = out;\n'
+        shape = 'hexagon'
+        arnet = self.arnet
+        labelidx = 0
+        for outprom in arnet.effectorproms:
+            s += '%i [label="%s",shape="hexagon"];\n' % (outprom, labelidx)
+            for e,i in zip(self.graph[:,arnet.numtf+arnet.numrec+labelidx],
+                           range(self.graph.shape[0])):
+                if e > 0:
+                    s += '%i -> %i [dir=back];\n' % \
+                             (outprom, (arnet.promlist + arnet.receptorproms)[i])
+            labelidx += 1
+
+        for tf in arnet.promlist:
+            s += '%i [label="%s"];\n' % (tf, labelidx)
+            for e,i in zip(self.graph[:,labelidx],
+                           range(self.graph.shape[0])):
+                if e > 0:
+                    s += '%i -> %i [dir=back];\n' % \
+                             (tf, (arnet.promlist + arnet.receptorproms)[i])
+            labelidx += 1
+
+        for rec in arnet.receptorproms:
+            s += '%i [label="%s",shape="rectangle"];\n' % (rec, labelidx)
+            labelidx += 1
+        s += '}'
+        return s
+
+
 
 ###########################################################################
 ### Test                                                                ###
