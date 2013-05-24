@@ -1,10 +1,14 @@
 import sys
+from code.utils.config import parsecmd, loadconfig
 from code.evodevo import *
 from code.operators import *
 from code.rencode2 import *
 from code.rencode import ReNCoDeProb, evaluatecircuit, regressionfun
 from code.utils.mathlogic import *
 from code.extendedarn import bindparams, displayARNresults
+import logging
+
+log = logging.getLogger(__name__)
 
 class BooleanProb(ReNCoDeProb):
         labels = {'and_':'AND',
@@ -14,11 +18,11 @@ class BooleanProb(ReNCoDeProb):
                   'inputs[0]':'INP'}
         funs = [ 'and_', 'or_', 'nand', 'nor','and_','or_','nand','nor']
         feedback = True
-        def __init__(self, nbits, evalf):
+        def __init__(self, nbits, evalf, **kwargs):
                 self.ninp = nbits
                 self.nout = 2
                 self.terms = ['inputs[%i]'%(idx,) for idx in range(nbits)]
-                ReNCoDeProb.__init__(self,evalf, printf=printmultiplecircuit)
+                ReNCoDeProb.__init__(self,evalf, **kwargs)
 
 def testadder(phenotype, intinps):
     #FIXME: n = log_2(len(intinps))
@@ -70,11 +74,13 @@ def evaluate(phenotype, test = False, nbits = 3, **kwargs):
         return len(intinps) - bestfit
 
 if __name__ == '__main__':
+    log.setLevel(logging.DEBUG)
     #p  = BooleanProb(evaluate)
     evalf = partial(evaluate, nbits=3)
     #mapfun = getoutputp0p1)
+    cfg = loadconfig(parsecmd())
     p = BooleanProb(3,evalf)
-    edw = EvoDevoWorkbench(sys.argv[1],p,RndAgent)
+    edw = EvoDevoWorkbench(cfg,p)
     #p.eval_ = bindparams(edw.arnconfig, p.eval_)
     edw.run()
 
