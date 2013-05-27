@@ -16,13 +16,6 @@ import arn
 from arn import bindparams, generatechromo, buildpromlist, \
     buildproducts, getbindings, _getweights, _getSignalArray
 
-try:
-    import matplotlib.pyplot as plt
-    from matplotlib import collections, legend
-except ImportError:
-    logging.warning('matplotlib not found.')
-    logging.warning('use of silentmode = 0 will result in an error...')
-
 log = logging.getLogger(__name__)
 
 
