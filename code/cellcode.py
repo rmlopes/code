@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 
 ### Problem base to use with ReNCoDe
 class CellProb:
-        def __init__(self, evaluate, numins, numouts):
+        def __init__(self, evaluate, numins=100, numouts=100):
                 self.eval_ = evaluate
                 self.ninp = numins
                 self.nout = numouts
@@ -38,13 +38,13 @@ class Cell(Agent):
         phenotype = None
         genotype = None
         fitness = None
-        def __init__(self, config, gcode = None, parentfit = 1e4, **kwargs):
-            Agent.__init__(self, parentfit)
+        def __init__(self, config, problem, gcode = None, parent = None, **kwargs):
+            Agent.__init__(self, parent)
             generator = bindparams(config, generatechromo)
             if gcode == None:
                     gcode = generator()
 
-            self.genotype = ARNetwork(gcode, config, **kwargs)
+            self.genotype = ARNetwork(gcode, config, problem=problem)
             #because now the phenotype is expressed at
             #evaluatiuon time
             self.phenotype = self.genotype
@@ -53,23 +53,28 @@ class Cell(Agent):
                    #self.phenotype.numrec == 0 or
                    self.phenotype.numtf == 0):
                 gcode = generator()
-                self.genotype = ARNetwork(gcode, config, **kwargs)
+                self.genotype = ARNetwork(gcode, config, problem=problem)
                 self.phenotype = self.genotype
 
             #initialize phenotype
-            self.phenotype.nstepsim(config.getint('default','simtime'),
-                                    *nparray(np.zeros(kwargs['problem'].ninp)))
+            self.phenotype.nstepsim(10000, #config.getint('default','simtime'),
+                                    *nparray(np.zeros(problem.ninp)))
             #FIXME: this is not being used, 'cause there is a problem
             #with the pickled ccs. Adopted the reset function below()
             self.initstate = copy.deepcopy(self.phenotype.ccs)
             self.fitness = 1e9
 
         def __str__(self):
-            return "### Agent ###\n%s\n%s: %f" % (self.arn,self.circuit,
+            return "### Agent ###\n%s\n%s: %f" % (self.phenotype.proteins,self.phenotype.effectors,
                                                   self.fitness)
 
         def pickled(self):
-            return (self.genotype.code.bin,self.phenotype.output_idx)
+            mycode = self.genotype.code.bin
+            try:
+                myout = self.phenotype.output_idx
+            except:
+                myout = 0
+            return (mycode,myout)
 
         def reset(self):
             self.phenotype.reset()
