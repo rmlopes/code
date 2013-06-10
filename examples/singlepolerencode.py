@@ -14,6 +14,7 @@ from code.evodevo import *
 from code.operators import *
 from code.rencode import *
 from code.utils.mathlogic import *
+from code.utils.config import *
 from code.arn import bindparams, displayARNresults
 import sys
 
@@ -79,7 +80,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         # initial conditions (as used by Stanley)
     inits = []
     if not test:
-        for i in range(5):
+        for i in range(10):
             x         = random.randint(0, 4799)/1000.0 - 2.4
             x_dot     = random.randint(0, 1999)/1000.0 - 1.0
             theta     = random.randint(0,  399)/1000.0 - 0.2
@@ -137,7 +138,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
             #output = (phenotype.effectorhist[outidx][-1] -
              #         phenotype.effectorhist[outidx][-2])
 
-            output = evaluatecircuit(phenotype, regressionfun,dict(),*(x, x_dot, theta, theta_dot))
+            output = phenotype(*(x, x_dot, theta, theta_dot))
         #print output
         # Apply action to the simulated cart-pole
         #if no cc change then repeat last
@@ -180,8 +181,8 @@ if __name__ == "__main__":
     #except:
     #   print 'Loading default agent class'
     #  agentclass = DMAgent
-
-    edw = EvoDevoWorkbench(sys.argv[1],p,DMAgent)
+    cfg = loadconfig(parsecmd())
+    edw = EvoDevoWorkbench(cfg,p)
     edw.run()
 
     testportions = [.05, .275, .5, .725, .95]
@@ -209,3 +210,5 @@ if __name__ == "__main__":
     print rstr
 
     print "Generalization Fitness: %f" % (625 - sum(results),)
+    edw.best.fitness = 625 - sum(results)
+    edw.runlog.step(edw.parents, numevals = edw.numevals)

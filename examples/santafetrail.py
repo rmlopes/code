@@ -3,6 +3,7 @@ from code.operators import *
 from code.evodevo import Problem,EvoDevoWorkbench
 from code.rencode import *
 from gp_ant import *
+from code.utils.config import *
 
 class SantaFeTrail(ReNCoDeProb):
         labels = {'ant.move_forward':'M',
@@ -18,12 +19,11 @@ class SantaFeTrail(ReNCoDeProb):
         #	ReNCoDeProb.__init__(self,evaluate)
 
 
-
-def evaluateant(agent):
-        circuit = agent.phenotype
-        if len(circuit) < 3:
+def evaluateant(agent, **kwargs):
+        agent.funskel = mergefun
+        if len(agent) < 3:
                 return 90
-        routine = evaluatecircuit(circuit, mergefun, dict(), [])
+        routine = agent()
         log.debug(routine)
         if len(routine) < 1000:
                 ant.runstring(routine,True)
@@ -34,5 +34,6 @@ def evaluateant(agent):
 
 if __name__ == '__main__':
         p = SantaFeTrail(evaluateant)
-        edw = EvoDevoWorkbench(sys.argv[1],p,ReNCoDeAgent)
+        cfg = loadconfig(parsecmd())
+        edw = EvoDevoWorkbench(cfg,p)
         edw.run()
