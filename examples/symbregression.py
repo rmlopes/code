@@ -167,8 +167,8 @@ if __name__ == '__main__':
     edw = EvoDevoWorkbench(cfg,p)
 
     edw.run(terminate = (lambda x,y: x <= 1e-3 or y <= 0))
-    print wrapevaluate(edw.best.phenotype,
-                       target=kozapolynomial,
-                       inputs=list(drange(-1,1.1,.1)),
-                       device=edw.device,
-                       test = True)
+    #print wrapevaluate(edw.best.phenotype,
+     #                  target=kozapolynomial,
+      #                 inputs=list(drange(-1,1.1,.1)),
+       #                device=edw.device,
+        #               test = True)
