@@ -44,4 +44,4 @@ if __name__ == '__main__':
                                     inputs=list(range(1,121,1)),
                                     device=edw.device,
                                     test = True)
-    edw.runlog.step(edw.parents,numevals=edw.numevals)
+    edw.runlog.validatelog.critical(edw.best.fitness)

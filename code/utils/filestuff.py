@@ -21,6 +21,7 @@ class DefaultRunLog:
         self.evolog = logging.getLogger('evolution')
         self.circuitlog = logging.getLogger('circuit')
         self.arnlog = logging.getLogger('arntofile')
+        self.validatelog = logging.getLogger('validationfile')
         self.evolog.critical(self.evologhead)
 
     def step(self, parents, **kwargs):

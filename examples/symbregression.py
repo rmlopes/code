@@ -48,20 +48,6 @@ def evaluate(circuit, target, inputs, test = False,**kwargs):
 
     return 1e6 if math.isinf(mse) else mse
 
-def evaluatennlike(circuit, target, inputs):
-    if len(circuit) < 4:
-        return 1e6
-    errors = [abs(target(inp) -
-                  evaluatecircuit(circuit, nnlikefun,dict(),inp))
-              for inp in inputs]
-    try:
-        sum_ = sum(errors)
-    except:
-        log.warning('Invalid individual: overflow error...')
-        return 1e6
-
-    return 1e6 if math.isinf(sum_) else sum_
-
 def mse_orig(a,b,tytuples):
     return (1.0/len(tytuples)) * sum([pow((a + b*y) - t,2)
                                    for t,y in tytuples])
