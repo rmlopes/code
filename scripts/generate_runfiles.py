@@ -5,35 +5,36 @@
 import csv
 import sys
 import argparse
-
+import experiments
 body = '''#!/bin/bash
 #$ -N %s
 #$ -cwd
 #$ -t 1-%s
 
-python -m %s %s configfiles/baseline.cfg
+python -m examples.%s %s configfiles/baseline.cfg
 '''
 
-options = {'dm5':['--initdm 5',
-                  '-o True'],
-           'rnd5':['--initdm 5',
-                   '--agent code.rencode.RndAgent']}
-
+options = experiments.representation
 
 parser = argparse.ArgumentParser()
-parser.add_argument("name", help="a base name for the experiment set.")
-parser.add_argument("module", help="the module of the problem to be run.")
+parser.add_argument("name", help="a list of base name for the experiment sets, separated by ':'.")
+parser.add_argument("module", help="the list of modules of the problems to be run, separated by ':'.")
 parser.add_argument("numruns", help="the number of runs for each experiment")
 args = parser.parse_args()
 
-f = open('run-'+args.name,'w')
-f.write(body%(args.name, args.numruns,args.module, ''))
-f.close()
+nametokens = args.name.split(':')
+moduletokens = args.module.split(':')
+assert(len(nametokens)==len(moduletokens))
 
-for k,options in options.items():
-    f = open('run-'+args.name + '-' + k, 'w')
-    optionstr=""
-    for pair in options:
-        optionstr += pair + " "
-    f.write(body%(args.name+"-"+k, args.numruns, args.module, optionstr))
-f.close()
+for name, module in zip(nametokens, moduletokens):
+    #f = open('run-'+args.name,'w')
+    #f.write(body%(args.name, args.numruns,args.module, ''))
+    #f.close()
+
+    for k,optlist in options.items():
+        f = open('run-'+name + '-' + k, 'w')
+        optionstr=""
+        for pair in optlist:
+            optionstr += pair + " "
+        f.write(body%(name+"-"+k, args.numruns, module, optionstr))
+        f.close()
