@@ -102,6 +102,7 @@ def displayARNresults(proteins, ccs, step=1):
     plt.legend()
     plt.savefig('ccoutput.png')
     call(["open", "ccoutput.png"])
+    return "ARN simulation displayed"
 
 def buildpromlist(genome, excite_offset, genesize, promoter,
                   overlapgenes, **kwargs):
@@ -280,6 +281,26 @@ class ARNetwork:
 
     def getneutralshare(self):
         return neutralshare(self)
+
+    def snapshot(self):
+        s = 'digraph best {\nordering = out;\n'
+        shape = 'hexagon'
+        labelidx = 0
+
+        for tf in self.promlist:
+            s += '%i [label="%s"];\n' % (tf, labelidx )
+            for e,h,i in zip(self.ebindings[:,labelidx],
+                             self.ibindings[:,labelidx],
+                             range(len(self.ebindings))):
+                if e > 0:
+                    s += '%i -> %i [dir=back];\n' % \
+                             (tf, self.promlist[i])
+                if h > 0:
+                    s += '%i -> %i [dir=back,style=dotted];\n' % \
+                             (tf, self.promlist[i])
+            labelidx += 1
+        s += '}'
+        return s
 
 ###########################################################################
 ### Test                                                                ###

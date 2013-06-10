@@ -20,21 +20,26 @@ log = logging.getLogger(__name__)
 
 
 def displayARNresults(proteins, ccs,
-                      samplerate=.001, temp = 0,extralabels=None,**kwargs):
+                      samplerate=1.0, temp = 0,extralabels=None,**kwargs):
     log.warning('Plotting simulation results for ' +
                 str(len(proteins)) + ' genes/proteins')
     #plt.figure(kwargs['figure'])
-    plt.clf()
+    arn.plt.clf()
+    fig, ax = arn.plt.subplots()
     xx = nparray(range(ccs.shape[1]))
     if extralabels:
         for i in range(len(proteins)):
-            plt.plot(xx, ccs[i],label="%s%i"%(extralabels[i],proteins[i][0],))
-            plt.legend()
+            ax.plot(xx, ccs[i],label="%s%i"%(extralabels[i],proteins[i][0],))
+            ax.legend()
 
+        #handles, labels = arn.plt.get_legend_handles_labels()
+        for line,label in zip(ax.lines, extralabels):
+            if label[0] == 'R':
+                line.set_marker('*')
     else:
         for i in range(len(proteins)):
-            plt.plot(xx, ccs[i])
-    plt.savefig('ccoutput_' + str(temp) + '.png')
+            arn.plt.plot(xx, ccs[i])
+    arn.plt.savefig('ccoutput_' + str(temp) + '.png')
     #plt.show()
     #call(["open",'ccoutput_' + str(temp) + '.png'])
 

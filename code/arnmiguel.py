@@ -91,11 +91,11 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
         arnet.ccs[:nump] /= sum(totparcels)
         #normalize outputs
         #FIXME: should this be done?
-        #for i in range(numeff):
+        for i in range(numeff):
         #    if arnet.ccs[-1-i] > 1.0:
         #        arnet.ccs[-1-i] = 1.0
-        #    elif arnet.ccs[-1-i] < .0:
-        #        arnet.ccs[-1-i] = .0
+            if arnet.ccs[-1-i] < .0:
+                arnet.ccs[-1-i] = .0
         if numeff > 1:
             arnet.ccs[nump+numrec:] /= sum(arnet.ccs[nump+numrec:])
 
@@ -173,6 +173,7 @@ class ARNetwork(arn.ARNetwork):
                 self.proteins[i].append(self.ccs[i])
 
         self.simfun = bindparams(config,iterate)
+
         self.delta = config.getfloat('default','delta')
         #log.debug(self.snapshot())
         #self.output_idx = 0
@@ -231,6 +232,8 @@ class ARNetwork(arn.ARNetwork):
         #else:
            # self.ccs = nparray(cc_state[:])
 
+    def __len__(self):
+        return len(self.proteins)+len(self.effectors)
 
     def __str__(self):
         return str(self.proteins)
@@ -258,6 +261,16 @@ class ARNetwork(arn.ARNetwork):
         for i in range(len(self.proteins)):
             self.proteins[i][-1] = self.ccs[i]
 
+    def printgraph(self):
+        '''In order to be used as a Phenotype object'''
+        displayARNresults(self.proteins, self.cchistory, temp=0)
+        extralabels = ['R']*self.numrec + ['E']*self.numeff
+        struct_prots = self.receptors + self.effectors
+        hist = np.vstack((self.receptorhist,self.effectorhist))
+        displayARNresults(struct_prots, hist,
+                          temp = 1, extralabels = extralabels)
+        return "ARN simulation chart was printed!"
+
 
     def snapshot(self):
         s = 'digraph best {\nordering = out;\n'
@@ -267,26 +280,26 @@ class ARNetwork(arn.ARNetwork):
             s += '%i [label="%s",shape="hexagon"];\n' % (outprom, labelidx)
             for e,h,i in zip(self.ebindings[:,self.numtf+self.numrec+labelidx],
                              self.ibindings[:,self.numtf+self.numrec+labelidx],
-                             range(len(self.ebindings))):
+                             range(self.ebindings.shape[0])):
                 if e > 0:
-                    s += '%i -> %i [dir=back];\n' % \
-                             (outprom, (self.promlist + self.receptorproms)[i])
+                    s += '%i -> %i [dir=back,weight=%i];\n' % \
+                             (outprom, (self.promlist + self.receptorproms)[i],e)
                 if h > 0:
-                    s += '%i -> %i [dir=back,style=dotted];\n' % \
-                             (outprom, (self.promlist + self.receptorproms)[i])
+                    s += '%i -> %i [dir=back,style=dotted,weight=%i];\n' % \
+                             (outprom, (self.promlist + self.receptorproms)[i],h)
             labelidx += 1
 
         for tf in self.promlist:
             s += '%i [label="%s"];\n' % (tf, labelidx )
-            for e,h,i in zip(self.ebindings[:,labelidx],
-                             self.ibindings[:,labelidx],
-                             range(len(self.ebindings))):
+            for e,h,i in zip(self.ebindings[:,labelidx-self.numeff],
+                             self.ibindings[:,labelidx-self.numeff],
+                             range(self.ebindings.shape[0])):
                 if e > 0:
-                    s += '%i -> %i [dir=back];\n' % \
-                             (tf, (self.promlist + self.receptorproms)[i])
+                    s += '%i -> %i [dir=back,weight=%i];\n' % \
+                             (tf, (self.promlist + self.receptorproms)[i], e)
                 if h > 0:
-                    s += '%i -> %i [dir=back,style=dotted];\n' % \
-                             (tf, (self.promlist + self.receptorproms)[i])
+                    s += '%i -> %i [dir=back,style=dotted,weight=%i];\n' % \
+                             (tf, (self.promlist + self.receptorproms)[i],h)
             labelidx += 1
 
         for rec in self.receptorproms:
