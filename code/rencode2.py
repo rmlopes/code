@@ -9,6 +9,7 @@ from arnmiguel import *
 from evodevo import Problem, Agent
 from utils import *
 from utils.bitstrutils import *
+from utils.mathlogic import *
 
 log = logging.getLogger(__name__)
 
@@ -121,6 +122,8 @@ class Phenotype:
                                 [inp[0] for inp in inps]))
                 queue.extend(inps)
             queue.sort(key=lambda x: x[1], reverse=True)
+            #print "Building circuit with this: "
+            #print self.printgraph()
             self.circuits.append(self.buildcircuit(queue,circuit))
 
         #map receptors to inputs
@@ -149,31 +152,36 @@ class Phenotype:
 
     def buildcircuit(self, queue, circuit=[], force_inputs=False):
         if not queue:
-            if len(circuit) > 1 or force_inputs:
-                circuit.extend(self.getinputnodes())
+            #if len(circuit) > 1 or force_inputs:
+            circuit.extend(self.getinputnodes())
             return circuit
 
         pnext = queue.pop(0)
         blacklist = [c[0] for c in circuit]
-        if pnext[0] in blacklist:
+        if pnext[0] in blacklist or pnext[0] in self.arnet.receptorproms:
             return self.buildcircuit(queue, circuit)
             #break;
-        elif pnext[0] in self.arnet.receptorproms:
-            return self.buildcircuit(queue, circuit, force_inputs=True)
+        #elif pnext[0] in self.arnet.receptorproms:
+         #   return self.buildcircuit(queue, circuit, force_inputs=True)
             #break;
         else:
             blacklist.append(pnext[0])
             index = self.arnet.promlist.index(pnext[0])
             signature = self.arnet.proteins[index][4]
             fun = self.problem.nodemap_(signature,self.problem.funs)
+            #print "NUUUUTS:", self.printgraph()
             inputs = self.getinputs(index)
+            #print self.arnet.promlist
+            #print 'index is',index
+            #print inputs
             inputs = filter(lambda x: x[0] not in blacklist, inputs)
             ar = self.problem.arity[fun]
             if ar > 0:
                     inputs = inputs[:ar]
             if not inputs:
                 #print signature, math.tanh(signature.int)
-                fun = str(math.tanh(signature.int))
+                #fun = str(math.tanh(signature.int))
+                fun = str(random.choice([0.0,1.0]))
             circuit.append((pnext[0],fun,[i[0] for i in inputs]))
 
             queue.extend(inputs)
@@ -182,11 +190,12 @@ class Phenotype:
 
     def getinputs(self, index):
         inputs=[]
-        rlist = self.arnet.receptorproms# [r[0] for r in self.arnet.receptors]
-        pmap = zip(self.arnet.promlist+rlist,self.graph[:,index])
-        for p,w in pmap:
-                if w > 0:
-                        inputs.append((p,w))
+        #rlist = self.arnet.receptorproms# [r[0] for r in self.arnet.receptors]
+        #pmap = zip(self.arnet.promlist+rlist,self.graph[:,index])
+        for e,i in zip(self.graph[:,index],
+                       range(self.graph.shape[0])):
+            if e > 0:
+                inputs.append(((self.arnet.promlist + self.arnet.receptorproms)[i],e))
         inputs.sort(key=lambda x: x[1], reverse = True)
         return inputs
 
@@ -201,22 +210,25 @@ class Phenotype:
         shape = 'hexagon'
         arnet = self.arnet
         labelidx = 0
+        #print "CODE"
+        #print self.graph
         for outprom in arnet.effectorproms:
             s += '%i [label="%s",shape="hexagon"];\n' % (outprom, labelidx)
             for e,i in zip(self.graph[:,arnet.numtf+arnet.numrec+labelidx],
                            range(self.graph.shape[0])):
                 if e > 0:
-                    s += '%i -> %i [dir=back];\n' % \
-                             (outprom, (arnet.promlist + arnet.receptorproms)[i])
+                    s += '%i -> %i [dir=back,weight=%i];\n' % \
+                             (outprom, (arnet.promlist + arnet.receptorproms)[i],e)
             labelidx += 1
 
-        for tf in arnet.promlist:
+        for tf,idx in zip(arnet.promlist,range(arnet.numtf)):
             s += '%i [label="%s"];\n' % (tf, labelidx)
-            for e,i in zip(self.graph[:,labelidx],
+            for e,i in zip(self.graph[:,idx],
                            range(self.graph.shape[0])):
                 if e > 0:
-                    s += '%i -> %i [dir=back];\n' % \
-                             (tf, (arnet.promlist + arnet.receptorproms)[i])
+                    s += '%i -> %i [dir=back,weight=%i];\n' % \
+                             (tf, (arnet.promlist + arnet.receptorproms)[i],e)
+
             labelidx += 1
 
         for rec in arnet.receptorproms:

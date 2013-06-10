@@ -24,6 +24,7 @@ def printdotcircuit(circuit, labels=None):
     s += '}'
     return s
 
+#TODO: remove! behavior is identical to nnlikefun
 def regressionfun(mapped, node_inputs, inputs ):
         if not node_inputs:
                 return eval(mapped)
@@ -245,23 +246,28 @@ class ReNCoDeProb(Problem):
 
 #callable phenotype
 class P:
-    def __init__(self, circuit, problem):
+    def __init__(self, arnet, circuit, problem, skeleton = nnlikefun):
+        self.geno = arnet
         self.circuit = circuit
         self.problem = problem
         #memory (disabled by default)
         self.memory = None
+        self.funskel = skeleton
 
     def getcircuit(self, *args):
         return self.circuit
 
     def __call__(self, *inputs):
-        return evaluatecircuit(self.circuit, nnlikefun, self.memory, *inputs)
+        return evaluatecircuit(self.circuit, self.funskel, self.memory, *inputs)
 
     def __len__(self):
         return len(self.circuit)
 
     def __eq__(self,other):
         return self.circuit == other.circuit
+
+    def printgraph(self):
+        return "GRAPH NOT AVAILABLE"
 
 ### Agent model to use with this CoDe module
 class ReNCoDeAgent(Agent):
@@ -277,7 +283,7 @@ class ReNCoDeAgent(Agent):
 
                 arnet = arn.ARNetwork(gcode,config)
                 self.genotype = arnet
-                self.phenotype = P(buildcircuit(self,problem), problem)
+                self.phenotype = P(arnet,buildcircuit(self,problem), problem)
                 self.problem = problem
                 self.fitness = 1e6
 
@@ -290,6 +296,7 @@ class ReNCoDeAgent(Agent):
 
         def print_(self):
             return printdotcircuit(self.phenotype)
+
 
 
 class DMAgent(ReNCoDeAgent):

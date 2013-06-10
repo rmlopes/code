@@ -57,8 +57,10 @@ class Cell(Agent):
                 self.phenotype = self.genotype
 
             #initialize phenotype
-            self.phenotype.nstepsim(10000, #config.getint('default','simtime'),
-                                    *nparray(np.zeros(problem.ninp)))
+            inps = nparray(np.zeros(problem.ninp))
+            inps += 0.05
+            self.phenotype.nstepsim(2000, #config.getint('default','simtime'),
+                                    *inps)
             #FIXME: this is not being used, 'cause there is a problem
             #with the pickled ccs. Adopted the reset function below()
             self.initstate = copy.deepcopy(self.phenotype.ccs)
