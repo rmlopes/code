@@ -36,7 +36,7 @@ class Agent:
                 #name, (total, neutral)
                 self.oplog = dict()
                 #total, neutral
-                self.mutlog = [0,0]
+                self.mutlog = [0.0,0.0]
 
         def traceops(self, opname, neutral):
             log.debug("tracing use of operator %s (neutral=%s)"%(opname,
