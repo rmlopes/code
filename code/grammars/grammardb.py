@@ -1,3 +1,11 @@
+_galapagos = {'start': [['expr']],
+              'expr': [['op','(','expr',',','expr',')'],
+                       ['var']],
+              'op': [['add_'],
+                     ['sub_'],
+                     ['mul_'],
+                     ['div_']],
+              'var': [['inputs[0]']]}
 
 _base_grammar = { 'exp': [['exp', 'op','exp'],
                           ['(','exp',')'],
