@@ -54,13 +54,18 @@ class DefaultRunLog:
         ancestorlog.critical(pickle.dumps(best.pickled()))
         self._print_ancestors(best, ancestorlog)
         print best.mutlog, best.oplog
-        muts = self._sum_mutations(best)
-        if muts[0] != 0:
-                print "Avg. Neutral mutations ratio: ", muts[1]/float(muts[0])
+        mutshares = self._sum_mutations(best)
+        mutshares = filter(lambda s: s>-1, mutshares)
+        print mutshares
+        if mutshares:
+            print "AVG_NEUTRAL_MUT:", sum(mutshares) / float(len(mutshares))
         shares = self._sum_neutralshare(best)
         print shares
-        print "Avg. Neutral portion of the genome", sum(shares) / len(shares)
-        print self._sum_ops(best)
+        print "AVG_NEUTRAL_GENOME:", sum(shares) / float(len(shares))
+        opshares = self._sum_ops(best)
+        if opshares:
+            for op, sh in opshares.items():
+                print "AVG_NEUTRAL_"+op+":"+str(sh[1]/float(sh[0]))
 
     def _print_ancestors(self, ind, alog):
         parent = ind.parent
@@ -73,10 +78,17 @@ class DefaultRunLog:
     def _sum_mutations(self, ind):
         parent = ind.parent
         if not parent:
-            return ind.mutlog
+            if ind.mutlog[0] != 0:
+                return [ind.mutlog[1]/float(ind.mutlog[0])]
+            else:
+                return [-1.0]
         else:
-            pmuts = self._sum_mutations(parent)
-            return [ind.mutlog[0]+pmuts[0], ind.mutlog[1] + pmuts[1]]
+            if ind.mutlog[0] != 0:
+                l = [ind.mutlog[1]/float(ind.mutlog[0])]
+            else:
+                l = [-1.0]
+            l.extend(self._sum_mutations(parent))
+            return l
 
     def _sum_ops(self, ind):
         parent = ind.parent
