@@ -124,7 +124,7 @@ class Phenotype:
         return self.circuit == other.circuit
 
     def printgraph(self):
-        pass
+        return self.circuit
 
     def extract_int_seq(self):
         sz = 8
