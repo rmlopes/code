@@ -107,16 +107,24 @@ class Phenotype:
         #print self.int_sequence
         self.circuit = reduce(lambda l,m: l+m,
                               self.translate(copy.deepcopy(self.int_sequence),
-                                             problem.grammar,problem.start))
-        #print self.circuit
+                                             problem.grammar,[problem.start],self.int_sequence))
+        print self.circuit
+
     def __len__(self):
         return len(self.int_sequence)
 
     def __call__(self, *inputs):
+        #log.info(self.circuit)
+        for key in self.problem.grammar.iterkeys():
+            if self.circuit.find(key) >= 0:
+                return 1e6
         return eval(self.circuit)
 
     def __eq__(self,other):
         return self.circuit == other.circuit
+
+    def printgraph(self):
+        pass
 
     def extract_int_seq(self):
         sz = 8
@@ -128,7 +136,7 @@ class Phenotype:
         log.debug(functions)
         return [el for f in functions for el in f[1]]
 
-    def translate(self, int_sequence, grm, tree ,originalseq=[], wrap=0):
+    def translate(self, int_sequence, grm, tree ,originalseq=[], wrap=1):
         if len(tree) == 0:
             return []
         #print "top el: ", tree[0]
