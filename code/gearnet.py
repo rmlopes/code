@@ -12,32 +12,6 @@ import copy
 
 log = logging.getLogger(__name__)
 
-def printrencode2(phenotype, **kwargs):
-    return rencode.printdotcircuit(
-            phenotype.circuits[phenotype.output_idx],**kwargs)
-
-
-def printmultiplecircuit(phenotype, labels=None, arnet = None):
-    circuit = phenotype.getcircuit(phenotype.output_idx)
-    if not arnet:
-        arnet = phenotype.arnet
-    s = 'digraph best {\nordering = out;\n'
-    for c in circuit:
-        shape='oval'
-        if c[0] in arnet.effectorproms:
-            shape='hexagon'
-        elif c[0] in arnet.receptorproms:
-            shape='rectangle'
-        s += '%i [label="%s",shape="%s"];\n' % (c[0], c[1], shape)
-                #else labels[c[1]])
-        for inp in c[2]:
-            aux = "dir=back"
-            if inp < 0:
-                aux += ",style=dotted"
-            s += '%i -> %i [%s];\n' % (c[0],abs(inp),aux)
-    s += '}'
-    return s
-
 ### Problem base to use with ReNCoDe
 class Prob():
         def __init__(self, evaluate, grammar, startcodon, **kwargs):
@@ -115,10 +89,15 @@ class Phenotype:
 
     def __call__(self, *inputs):
         #log.info(self.circuit)
+        if not self.isvalid():
+            return 1e6
+        return eval(self.circuit)
+
+    def isvalid(self):
         for key in self.problem.grammar.iterkeys():
             if self.circuit.find(key) >= 0:
-                return 1e6
-        return eval(self.circuit)
+                return False
+        return True
 
     def __eq__(self,other):
         return self.circuit == other.circuit
