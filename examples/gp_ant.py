@@ -169,8 +169,8 @@ class AntSimulator(object):
             last = self.moves
             try:
                 if callable_:
-                    eval(routine,{'ant':self,'progN':progN,
-                                  'dummy':dummy})()
+                    eval(routine,{'ant':self,'prog3':prog3,
+                                  'prog2':prog2, 'progN':progN, 'dummy':dummy})()
                 else:
                     eval(routine,{'ant':self})
 
