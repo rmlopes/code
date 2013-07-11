@@ -73,3 +73,21 @@ ant_grammar = { 'code': [['line'],
                 'op': [['ant.turn_left;\n'],
                        ['ant.turn_right;\n'],
                        ['ant.move_forward;\n']]}
+
+_artificial_ant = { 'code': [['ant.if_food_ahead','(','code',',','code',')'],
+			     ['prog2','(','code',',','code',')'],
+			     ['prog3','(','code',',','code',',','code',')'],
+			     ['top']],
+		    'top': [['ant.move_forward'],
+			    ['ant.turn_left'],
+			    ['ant.turn_right']]}
+			     	
+_artificial_ant2 = { 'code': [['ant.if_food_ahead','(','code',',','code',')'],
+                              ['prog2','(','code',',','code',')'],
+                              ['prog3','(','code',',','code',',','code',')'],
+			      ['top'],
+                              ['top'],
+                              ['top'],],
+		    'top': [['ant.move_forward'],
+			    ['ant.turn_left'],
+			    ['ant.turn_right']]}
