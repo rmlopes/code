@@ -1,6 +1,8 @@
 from symbregression import *
 import code.gearnet as gnet
 import code.grammars.grammardb as gdb
+from code.operators import *
+
 
 if __name__ == '__main__':
     #log.setLevel(logging.INFO)
