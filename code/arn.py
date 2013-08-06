@@ -230,6 +230,7 @@ class ARNetwork:
         pbindfun = bindparams(config, getbindings)
         weightsfun = bindparams(config, _getweights)
         nump = len(self.proteins)
+        self.ccs = []
         if self.promlist:
             self.ccs=nparray([1.0/nump]*nump)
             for i in range(len(self.proteins)):
