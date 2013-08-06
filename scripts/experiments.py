@@ -52,3 +52,37 @@ representation = {'dm5T':['--initdm 5',
                   'rnd9F':['--initdm 9',
                            '--agent code.rencode.RndAgent',
                            '-o False']}
+
+rates = {'_14': '0.1,0.4',
+         '_23': '0.2,0.3',
+         '_32': '0.3,0.2',
+         '_41': '0.4,0.1',
+         '_55': '0.25,0.25'}
+
+blind_operators = {'TD': 'transposon,delete',
+                   'JD': 'junk,delete'}
+
+sizes = {'_50': '50',
+         '_100': '100',
+         '_200': '200',
+         '_400': '400'}
+
+aware_operators = 'genecopy,genedelete'
+
+ops = dict()
+
+for oplabel, opv in blind_operators.items():
+    for slabel,s in sizes.items():
+        for rlabel, rv in rates.items():
+            l = [('--operators '+ opv)]
+            l.append('--opargs ' + s)
+            l.append('--oprates ' + rv)
+            ops[oplabel+slabel+rlabel] = l
+
+for rlabel, rv in rates.items():
+    l = ['--operators '+ aware_operators]
+    l.append('--oprates ' + rv)
+    ops['GCD'+rlabel] = l
+
+if __name__ == '__main__':
+    print ops
