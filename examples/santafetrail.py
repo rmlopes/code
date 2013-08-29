@@ -25,10 +25,10 @@ def evaluateant(agent, **kwargs):
                 return 90
         routine = agent()
         log.debug(routine)
-        if len(routine) < 1000:
-                ant.runstring(routine,True)
-        else:
-                return 100
+        #if len(routine) < 5000:
+        ant.runstring(routine,True)
+        #else:
+         #       return 100
         return 89 - ant.eaten
 
 
