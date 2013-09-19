@@ -9,17 +9,19 @@ CEXAXIS <- 0.51
 args<-commandArgs(TRUE)
 separator = "\n\n"
 #evoresults = read.table(args[1], header=TRUE)
-evoresults = read.table("~/Documents/phdsupport/data/representation/analysis/grouped_evolution.txt", header=TRUE)
+evoresults = read.table("~/Documents/phdsupport/data/ops/analysis/grouped_evolution.txt", header=TRUE)
 fresults = evoresults[evoresults$Evaluations < 1000000 || evoresults$Problem == 'harmonic',]
 fresults = fresults[fresults$Best < 0.001,]
 #print(fresults[0])
 dev.new()
-#b = boxplot(Evaluations ~interaction(Problem,Experiment), fresults,las=3, outline = FALSE, main="Number of Evaluations to succeed",col=(c("green","red",'blue','yellow')))
-ggplot(data = fresults, aes(x = Experiment, y = Evaluations)) + 
-  geom_boxplot(aes(fill = Problem))+ opts(axis.text.x=theme_text(angle=-90)) + facet_grid(Problem ~ .) + opts(legend.position = "none")
+#b = boxplot(Evaluations ~interaction(Problem,Op), fresults,las=3, outline = FALSE, main="Number of Evaluations to succeed",col=(c("green","red",'blue','yellow')))
+ggplot(data = fresults, aes(x = factor(Rates), y = Evaluations, fill=Op)) + 
+  geom_boxplot(outlier.shape=NA) +  
+  opts(axis.text.x=theme_text(angle=-90)) + facet_grid(Problem ~ OpSize) #+ 
+  #opts(legend.position = "none")
 
-factors = list(fresults$Experiment, fresults$Problem)
-sumresults = describeBy(fresults$Evaluations, factors,mat=TRUE)
+factors = list(fresults$Rates,fresults$OpSize,fresults$Op, fresults$Problem)
+sumresults = describeBy(fresults$Evaluations, factors,mat=FALSE)
 dev.new()
 error.bars(fresults$Evaluations, stats=sumresults, labels=sumresults$group1, ylab="Evaluations" )
 
