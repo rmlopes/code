@@ -8,8 +8,46 @@ import string
 #FIXME import from code
 evologhead = str('Best\tNumProteins\tNumFunctions\tNumInactive\t'+
                  'GeneSize\tEvaluations\tAvgBest\tAvgNumProteins\t'+
-                 'AvgNumFunctions\tAvgGeneSize\tGeneralization\t'+
-                 'NeutralMut\tNeutralBits')
+                 'AvgNumFunctions\tAvgGeneSize\tValidation\t')#+
+                 #'NeutralMut\tNeutralBits')
+
+class FilenameParsers:
+    class representation:
+        headers = "Problem\tExperiment\tRunIdx\t" + evologhead + "\n"
+        def parsefilename(self,filename):
+            class fn: pass
+            f = fn()
+            tokens = filename.split('_')
+            try:
+                f.problem =  tokens[0].split('-',1)[0]
+                f.label = tokens[0].split('-',1)[1]
+                #label = string.replace(label,"-nooverlap","F")
+            except:
+                f.label = 'dm5'
+            f.idx = tokens[-1]
+            return f
+
+        def tostr(self,s):
+            return s.problem+"\t"+s.label+"\t"+s.idx 
+
+    class operators:
+        headers = "Problem\tOp\tOpSize\tRates\tRunIdx\t" + evologhead + "\n"
+        def parsefilename(self,filename):
+            class fn: pass
+            f = fn()
+            tokens = filename.split('_')
+            f.problem =  tokens[0].split('-',1)[0]
+            f.ops = tokens[0].split('-',1)[1]
+            if f.ops != "GCD":
+                f.size = tokens[1]
+            else:
+                f.size = "NA" 
+            f.rates = tokens[-3]
+            f.idx = tokens[-1]
+            return f
+
+        def tostr(self,s):
+            return s.problem+"\t"+s.ops+"\t"+s.size +"\t"+s.rates+"\t"+s.idx
 
 parser = argparse.ArgumentParser()
 parser.add_argument("dir",
@@ -17,26 +55,34 @@ parser.add_argument("dir",
 parser.add_argument("-p","--pattern", default="_evolution_",
                     help="the pattern used to distinguish the \
                     evolutionary run log files.")
-parser.add_argument("-g","--include_generalization", default=True,
-                    help="the module of the problem to be run.")
+parser.add_argument("-fp", "--fnameparser", default="representation",
+                    help="the parser to read the filename and separate the experiments.")
+parser.add_argument("-g","--validation", default="_validation_",
+                    help="the pattern used to distinguish the validation result files.")
 args = parser.parse_args()
 
 files = filter(lambda x: x.find(args.pattern) != -1,
                os.listdir(args.dir))
 newlines=[]
-headers = "Experiment\tRunIdx\t" + evologhead + "\n"
-sys.stdout.write(headers)
+
+absfnparse = getattr(FilenameParsers,args.fnameparser)
+fnparser = absfnparse()
+sys.stdout.write(absfnparse.headers)
 for f in files:
-    tokens = f.split('_')
-    try:
-        label = tokens[0].split('-',1)[1]
-        label = string.replace(label,"-nooverlap","F")
-    except:
-        label = 'dm5'
-    idx = tokens[2]
+    parsed = fnparser.parsefilename(f)
     fh = open(args.dir+f,'r')
     lines = fh.readlines()
-    towrite = label+"\t"+idx+"\t"+lines[-1][:-1]
+    valfh = open(args.dir+ f.replace("evolution","validation")+'.save','r')
+    vlines = valfh.readlines()
+    if vlines:
+        v = vlines[-1]
+    else:
+        v = '0.0\n'
+    towrite = fnparser.tostr(parsed) +"\t"+lines[-1][:-1]+'\t'+v
+    sys.stdout.write(towrite)
+
+'''
+Search in error and output stream files.
 
     if args.include_generalization:
         lenidx = len(tokens[-1])
@@ -63,7 +109,6 @@ for f in files:
             genresult = '1e6\n'
 
         towrite += "\t" + genresult
-
+'''
     #to filter failed experiments
-    if lines[-1].find('Best') == -1:
-            sys.stdout.write(towrite)
+    #if lines[-1].find('Best') == -1:
