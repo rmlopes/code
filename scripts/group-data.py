@@ -28,7 +28,7 @@ class FilenameParsers:
             return f
 
         def tostr(self,s):
-            return s.problem+"\t"+s.label+"\t"+s.idx 
+            return s.problem+"\t"+s.label+"\t"+s.idx
 
     class operators:
         headers = "Problem\tOp\tOpSize\tRates\tRunIdx\t" + evologhead + "\n"
@@ -38,11 +38,15 @@ class FilenameParsers:
             tokens = filename.split('_')
             f.problem =  tokens[0].split('-',1)[0]
             f.ops = tokens[0].split('-',1)[1]
-            if f.ops != "GCD":
-                f.size = tokens[1]
+            if f.ops == "GCD":
+                f.size = "len(gene)"
+                f.rates = tokens[-3]
+            elif f.ops == 'rnd7F':
+                f.size = '0'
+                f.rates = '0'
             else:
-                f.size = "NA" 
-            f.rates = tokens[-3]
+                f.size = tokens[1]
+                f.rates = tokens[-3]
             f.idx = tokens[-1]
             return f
 

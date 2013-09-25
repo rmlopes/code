@@ -3,27 +3,94 @@ library(xtable)
 library(outliers)
 library(tableplot)
 library(ggplot2)
+library(gridExtra)
 options(width=192)
 CEXAXIS <- 0.51
 
 args<-commandArgs(TRUE)
 separator = "\n\n"
 #evoresults = read.table(args[1], header=TRUE)
-evoresults = read.table("~/Documents/phdsupport/data/ops/analysis/grouped_evolution.txt", header=TRUE)
-fresults = evoresults[evoresults$Evaluations < 1000000 || evoresults$Problem == 'harmonic',]
-fresults = fresults[fresults$Best < 0.001,]
-#print(fresults[0])
-dev.new()
-#b = boxplot(Evaluations ~interaction(Problem,Op), fresults,las=3, outline = FALSE, main="Number of Evaluations to succeed",col=(c("green","red",'blue','yellow')))
-ggplot(data = fresults, aes(x = factor(Rates), y = Evaluations, fill=Op)) + 
-  geom_boxplot(outlier.shape=NA) +  
-  opts(axis.text.x=theme_text(angle=-90)) + facet_grid(Problem ~ OpSize) #+ 
-  #opts(legend.position = "none")
+evoresults = read.table("~/Documents/thesis/phdsupport/data/ops/analysis/grouped_evolution.txt", header=TRUE)
+fresults = evoresults[evoresults$Problem != "harmonic" & (evoresults$Evaluations < 1000000 & evoresults$Problem != "<NA>" & !is.nan(evoresults$Best) & evoresults$Best < 0.001),]
 
-factors = list(fresults$Rates,fresults$OpSize,fresults$Op, fresults$Problem)
-sumresults = describeBy(fresults$Evaluations, factors,mat=FALSE)
+#|| evoresults$Problem == 'harmonic',]
+#fresults = fresults[fresults$Best < 0.01,]
+#print(fresults[0:10])
+fresults <- rbind(evoresults[evoresults$Problem == "harmonic",], fresults)
+fresults$Problem <- factor(fresults$Problem)
+fresults$Op <- factor(fresults$Op)
+fresults$OpSize <- factor(fresults$OpSize)
+fresults$Rates <- factor(fresults$Rates)
+"
+p1 <- ggplot(subset(fresults,Problem == 'harmonic'),
+            aes(x = OpSize, y = Evaluations,fill=Rates)) + 
+            facet_grid(Problem~Op) + 
+            geom_boxplot()
+
+p2 <- ggplot(subset(fresults,Problem == 'pendulum'),
+            aes(x = OpSize, y = Evaluations,fill=Rates)) + 
+            facet_grid(Problem~Op) + 
+            geom_boxplot(outlier.shape=NA) +
+            coord_cartesian(ylim=c(0, 50000))
+
+p3 <- ggplot(subset(fresults,Problem == 'polinomial'),
+            aes(x = OpSize, y = Evaluations,fill=Rates)) + 
+            facet_grid(Problem~Op) + 
+            geom_boxplot(outlier.shape=NA) +
+            coord_cartesian(ylim=c(0, 300000))
+
+p4 <- ggplot(subset(fresults,Problem == 'santafetrail'),
+            aes(x=Problem,y = Evaluations,fill=Rates)) + 
+            facet_grid(OpSize~Op) + 
+            geom_boxplot(outlier.shape=NA) +
+            coord_cartesian(ylim=c(0, 300000))
 dev.new()
-error.bars(fresults$Evaluations, stats=sumresults, labels=sumresults$group1, ylab="Evaluations" )
+grid.arrange(p1,p2,p3,p4,ncol=1)
+"
+
+dev.new()
+ggplot(data = fresults, aes(x = OpSize, y = Evaluations,fill=Rates)) + 
+  geom_boxplot(outlier.shape=NA)+
+  #coord_cartesian(ylim=c(0, 40000)) +
+  facet_grid(Problem ~ Op ) +
+  scale_y_log10() +
+  theme(axis.text.x=element_text(angle=-90))
+
+
+#splitresults = split(fresults,interaction(fresults$Problem,fresults$Op,fresults$Rates))
+#print(splitresults)
+#fresults$splitnames <- fresults$Problem.fresults$Op.fresults$Rates.fresults$OpSize
+factors =  list(fresults$Problem,fresults$Op,fresults$Rates, fresults$OpSize)
+sumresults = describeBy(fresults$Evaluations,interaction(fresults$Problem,fresults$Op,fresults$Rates, fresults$OpSize),mat=FALSE)
+print(sumresults)
+n <- factor(unique(interaction(fresults$Problem,fresults$Op,fresults$Rates, fresults$OpSize)))
+
+#row.names(sumresults) <- levels(n)
+#print(sumresults)
+sumresultsb <- do.call("rbind",sumresults)
+#row.names(sumresultsb) <- interaction(fresults$Problem,fresults$Op,fresults$Rates, fresults$OpSize)
+sumresultsb$merged <- levels(n)
+sumresultsb
+#dev.new()
+#b = boxplot(Evaluations ~interaction(Problem,Op), fresults,las=3, outline = FALSE, main="Number of Evaluations to succeed",col=(c("green","red",'blue','yellow')))
+"ggplot(data = fresults, aes(x = factor(Rates), y = Evaluations, fill=Op)) + 
+  geom_boxplot(outlier.shape=NA) +
+  coord_cartesian(ylim=c(0, 500000)) +
+  opts(axis.text.x=theme_text(angle=-90)) + facet_grid(Problem ~ OpSize) #+ 
+  #opts(legend.position = 'none')
+"
+dev.new()
+ggplot(data=fresults, aes(x=OpSize,fill=Rates)) +
+  geom_bar(stat="bin",position="dodge") +
+  #coord_flip() +
+  facet_grid(Problem~Op) +
+  theme(axis.text.x=element_text(angle=-90))
+
+#factors = list(fresults$Rates,fresults$OpSize,fresults$Op, fresults$Problem)
+#sumresults = describeBy(fresults$Evaluations, factors,na.rm = TRUE, mat=FALSE)
+sumresults$Problem = strsplit(rowname)
+dev.new()
+error.bars(stats=sumresultsb, ylab="Evaluations" )
 
 textable = xtable(sumresults[c(2,4:6,10)],
                            digits=c(0, 0, 0, 0,0,0),
