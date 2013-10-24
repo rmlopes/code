@@ -14,8 +14,8 @@ def evaluateant(agent, **kwargs):
         #if len(routine) < 1000:
         routine = agent.circuit
         #print routine
-        if agent.isvalid() and len(routine)<1000:
-           ant.runstring(routine,True)  
+        if agent.isvalid():
+           ant.runstring(routine,True)
         else:
            return 1e6
         #a = agent()
@@ -27,7 +27,7 @@ def evaluateant(agent, **kwargs):
 
 
 if __name__ == '__main__':
-        p = Prob(evaluateant, gdb._artificial_ant, 'code')
+        p = Prob(evaluateant, gdb._artificial_ant2, 'code')
         cfg = loadconfig(parsecmd())
         edw = EvoDevoWorkbench(cfg,p)
         edw.run()
