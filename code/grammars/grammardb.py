@@ -101,13 +101,12 @@ _artificial_ant = { 'code': [['ant.if_food_ahead','(','code',',','code',')'],
 		    'top': [['ant.move_forward'],
 			    ['ant.turn_left'],
 			    ['ant.turn_right']]}
-			     	
-_artificial_ant2 = { 'code': [['ant.if_food_ahead','(','code',',','code',')'],
-                              ['prog2','(','code',',','code',')'],
-                              ['prog3','(','code',',','code',',','code',')'],
-			      ['top'],
-                              ['top'],
-                              ['top'],],
+
+_artificial_ant2 = { 'code': [['line'],['top']],
+		     'line': [['ant.if_food_ahead(','code',',','code',')'],
+                             ['prog2(','code',',','code',')'],
+                             ['prog3(','code',',','code',',','code',')'],
+                             ['code']],
 		    'top': [['ant.move_forward'],
 			    ['ant.turn_left'],
 			    ['ant.turn_right']]}
