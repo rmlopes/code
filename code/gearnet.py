@@ -39,6 +39,9 @@ class GEARNetAgent(Agent):
                         numtfs = arnet.numtf
                 else:
                     arnet = ARNetwork(gcode,config, problem=problem)
+                    while arnet.numtf == 0:
+                            arnet = ARNetwork(bitflipmutation(parent.genotype.code),config, problem=problem)
+
                 self.genotype = arnet
                 self.genotype.simulate()
                 #print arnet.promlist
@@ -69,8 +72,9 @@ class RndAgent(GEARNetAgent):
 
 def replace( intnum, key, g):
     i = intnum % len(g[key])
-    log.debug("Returning rule " + str(i) + " for key " +
-              key + " -> "+str( g[key][i]))
+    #buggy line: recursion depth exceeded
+    #log.debug("Returning rule " + str(i) + " for key " +
+     #         key + " -> "+str( g[key][i]))
     return g[key][i]
 
 class Phenotype:
@@ -81,8 +85,8 @@ class Phenotype:
         #print self.int_sequence
         self.circuit = reduce(lambda l,m: l+m,
                               self.translate(copy.deepcopy(self.int_sequence),
-                                             problem.grammar,[problem.start],self.int_sequence))
-        print self.circuit
+                                             problem.grammar,problem.start,self.int_sequence))
+        #print self.circuit
 
     def __len__(self):
         return len(self.int_sequence)
@@ -108,6 +112,7 @@ class Phenotype:
     def extract_int_seq(self):
         sz = 8
         functions = [[p[0],
+                      #[p[0]],
                       [p[4][i*sz:sz+i*sz].uint for i in range(len(p[4])/sz)],
                       #[p[4][i*sz:sz+i*sz].count(1) for i in range(len(p[4])/sz)],
                       p[5]] for p in self.arnet.proteins]
@@ -115,12 +120,34 @@ class Phenotype:
         log.debug(functions)
         return [el for f in functions for el in f[1]]
 
-    def translate(self, int_sequence, grm, tree ,originalseq=[], wrap=1):
+    def translate(self, int_sequence, grammar, current, originalseq=[], wrap=None):
+        if wrap == None:
+            wrap=[10]
+        if current not in grammar.keys() or (not int_sequence and not wrap[0]):
+            return current
+        else:
+            if not int_sequence:
+                int_sequence.extend(originalseq)
+                wrap[0] -= 1
+                #print wrap
+            index = int_sequence.pop(0) % len(grammar[current])
+            prod = grammar[current][index]
+            final = []
+            for i in prod:
+                if i in grammar.keys():
+                    final.extend(self.translate(int_sequence, grammar, i, originalseq, wrap))
+                else:
+                    final.extend([i])
+            return final
+
+
+    def translate2(self, int_sequence, grm, tree ,originalseq=[], wrap=1):
         if len(tree) == 0:
             return []
         #print "top el: ", tree[0]
         #print grm.iterkeys()
-        if tree[0] in grm.iterkeys():
+
+        if tree[0] in grm.keys():
             if len(int_sequence) == 0:
                 if wrap:
                     int_sequence.extend(originalseq)
@@ -128,8 +155,9 @@ class Phenotype:
                 else:
                     return tree
             x = int_sequence.pop(0)
-            #print tree
-            tree = replace(x,tree[0],grm) + tree[1:]
+            i = x % len(grm[tree[0]])
+
+            tree = grm[tree[0]][i] + tree[1:]
             return self.translate(int_sequence, grm,
                                   tree,originalseq,wrap)
         else:
