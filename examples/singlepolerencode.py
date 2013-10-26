@@ -192,7 +192,7 @@ if __name__ == "__main__":
     assert len(inputs) == 625
     results = []
     for i in inputs:
-        fit = p.eval_(edw.best.phenotype, i)
+        fit = p.eval_(edw.best.phenotype, i, test=True)
         if fit < 0.000000001:
             results.append(0)
         else:
@@ -207,8 +207,7 @@ if __name__ == "__main__":
         if (i+1) % pow(5,2) == 0:
             rstr = rstr + '\n'
 
-    print rstr
-
     print "Generalization Fitness: %f" % (625 - sum(results),)
     edw.best.fitness = 625 - sum(results)
-    edw.runlog.step(edw.parents, numevals = edw.numevals)
+    edw.runlog.validatelog.critical(rstr+'\n')
+    edw.runlog.validatelog.critical(edw.best.fitness)
