@@ -139,6 +139,7 @@ def wrapevaluate(circuit, target, inputs, device, test = False):
 
 if __name__ == '__main__':
     #log.setLevel(logging.INFO)
+    random.seed(1234*int(os.getenv('SGE_TASK_ID')))
     evalfun = partial(evaluate,
                       target=kozapolynomial,
                       inputs=list(drange(-1,1.1,.1)))

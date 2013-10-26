@@ -176,6 +176,7 @@ def factorstoinputs( factors ):
             (factors[3] * 3.0) - 1.5]
 
 if __name__ == "__main__":
+    random.seed(1234*int(os.getenv('SGE_TASK_ID')))
     p = CartPoleProb(evaluate_individual)
     #agentclass = getattr(__import__('__main__'),sys.argv[2])
     #except:
