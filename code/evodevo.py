@@ -15,6 +15,7 @@ from numpy import cumsum
 from abc import *
 import cPickle as pickle
 import sys
+from math import ceil
 
 log = logging.getLogger(__name__)
 
@@ -196,18 +197,28 @@ class EvoDevoWorkbench:
                 #TODO: clean this code
                 offsprings = []
                 if self.xover_:
-                    while len(offsprings)/float(self.popsize)\
-                    < self.xrate:
-                        breeders = random.sample(self.parents,2)
-                        offsprings.extend(self._reproduct_agents(*breeders))
+                    #while len(offsprings)/float(self.popsize)\
+                    #< self.xrate:
+                    #tournament FIXME: parameterise this
+                    for i in range(self.popsize//2):
+                        if random.random() < self.xrate:
+                            players1 = random.sample(self.parents,3)
+                            players1.sort(key=lambda a: a.fitness)
+                            players2 = random.sample(self.parents,3)
+                            players2.sort(key=lambda a: a.fitness)
+                            breeders = [players1[0], players2[0]]
+                            #breeders = random.sample(self.parents,2)
+                            offsprings.extend(self._reproduct_agents(*breeders))
                     log.debug('Created %i offsprings by xover.'
                               %(len(offsprings),))
 
                 if not self.interactive:
-                    mutants = [self._create_mutant(p)
-                               for p in self.parents
-                               for i in range(self.popratio)]
-                    self.population = (offsprings +
+                    if len(offsprings) < self.popsize:
+                        mutants = [self._create_mutant(p)
+                                   for p in self.parents
+                                   for i in range( \
+                                                   int(ceil((self.popsize - len(offsprings))/float(self.popratio))))]
+                        self.population = (offsprings +
                                        mutants[:(self.popsize-len(offsprings))])
                 else:
                     if len(offsprings) < self.popsize:
@@ -230,11 +241,11 @@ class EvoDevoWorkbench:
         def _create_mutant(self, parent):
             op_ = _selectop(self.ops_,self.oprates)
             gcodeclass = parent.genotype.code.__class__
-            gcode = op_(gcodeclass(parent.genotype.code),
+            opcode = op_(gcodeclass(parent.genotype.code),
                         *self.opargs,
                         arnet = parent.genotype)
-            if self.trace and op_.__name__ != '_idle':
-                agent = self.agentclass(gcode = gcode,
+            if self.trace and op_.__name__ != 'idle':
+                agent = self.agentclass(gcode = opcode,
                                         parent = parent,
                                         problem = self.problem)
                 if agent.phenotype == parent.phenotype:
@@ -242,14 +253,16 @@ class EvoDevoWorkbench:
                 else:
                     neutraloperator = False
 
-            mut_gcode = self.mutate_(gcodeclass(gcode))
-            mutagent = self.agentclass(gcode = mut_gcode,
+            mut_opcode = self.mutate_(gcodeclass(opcode))
+            mutagent = self.agentclass(gcode = mut_opcode,
                                        parent = parent,
                                        problem = self.problem)
             if self.trace:
-                if op_.__name__ == '_idle':
+                if op_.__name__=='idle':
                     agent = parent
-                mutmask = mut_gcode ^ agent.genotype.code
+                assert len(mut_opcode) == len(opcode), \
+                        "non-matching genomes; using %s\n%s\n%s" % (op_.__name__,opcode,mut_opcode)
+                mutmask = mut_opcode ^ opcode
                 idxmut = filter(lambda l: l[0] == '1',
                                 zip(mutmask.bin, range(len(mutmask.bin))))
                 totalmut = len(idxmut)
