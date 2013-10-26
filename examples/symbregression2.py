@@ -30,7 +30,7 @@ if __name__ == '__main__':
     ##fromlist is needed for classes. Functions may be called directly
     #mod = __import__(sys.argv[3], fromlist=[sys.argv[2]])
     #agentclass = getattr(mod, sys.argv[2])
-
+    random.seed(1234*int(os.getenv('SGE_TASK_ID')))
     evalfun = partial(wrapevaluate,
                       target=Keijzer6,
                       inputs=list(range(1,51,1)))
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     cfg = loadconfig(parsecmd())
     edw = EvoDevoWorkbench(cfg,p)
 
-    edw.run(terminate = (lambda x,y: x <= 1e-6 or y <= 0))
+    edw.run(terminate = (lambda x,y: x <= 1e-2 or y <= 0))
     edw.best.fitness = wrapevaluate(edw.best.phenotype, target=Keijzer6,
                                     inputs=list(range(1,121,1)),
                                     device=edw.device,
