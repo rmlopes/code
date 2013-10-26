@@ -14,7 +14,7 @@ body = '''#!/bin/bash
 python -m examples.%s %s configfiles/baseline.cfg
 '''
 
-options = experiments.ops#representation
+options = experiments.xover#experiments.ops#representation
 
 parser = argparse.ArgumentParser()
 parser.add_argument("name", help="a list of base name for the experiment sets, separated by ':'.")

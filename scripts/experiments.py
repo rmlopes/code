@@ -1,5 +1,3 @@
-
-
 rates = {'_14': '0.1,0.4',
          '_23': '0.2,0.3',
          '_32': '0.3,0.2',
@@ -16,6 +14,16 @@ sizes = {'_50': '50',
 
 aware_operators = 'genecopy,genedelete'
 
+xoverops = {'1P' : 'onepoint',
+            '2P' : 'twopoint',
+            'uni': 'uniform',
+            '1Pgene': 'onepointgene',
+            '2Pgene': 'twopointgene',
+            'unigene': 'unigene'}
+
+xo_rates = ['0.1','0.3','0.5','0.7','0.9']
+
+#Variation operators experiments
 ops = dict()
 
 for oplabel, opv in blind_operators.items():
@@ -30,6 +38,15 @@ for rlabel, rv in rates.items():
     l = ['--operators '+ aware_operators]
     l.append('--oprates ' + rv)
     ops['GCD'+rlabel] = l
+
+
+#Xover operators experiments
+xover = dict()
+for oplabel, opv in xoverops.items():
+    for r in xo_rates:
+        l = [('--xover '+ opv + '_xover')]
+        l.append('--xrate ' + r)
+        xover[oplabel+'-'+r] = l
 
 
 representation = {'dm5T':['--initdm 5',
