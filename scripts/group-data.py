@@ -53,6 +53,26 @@ class FilenameParsers:
         def tostr(self,s):
             return s.problem+"\t"+s.ops+"\t"+s.size +"\t"+s.rates+"\t"+s.idx
 
+    class xover:
+        headers = "Problem\tOp\tRate\tRunIdx\t" + evologhead + "\n"
+        def parsefilename(self,filename):
+            class fn: pass
+            f = fn()
+            tokens = filename.split('_')
+            f.problem =  tokens[0].split('-',1)[0]
+            f.op = tokens[0].split('-')[1]
+
+            if f.op == "rnd7F":
+                f.rate = '0.0'
+            else:
+                f.rate = tokens[0].split('-')[2]
+
+            f.idx = tokens[-1].split('.')[0]
+            return f
+
+        def tostr(self,s):
+            return s.problem+"\t"+s.op+"\t"+s.rate+"\t"+s.idx
+
 parser = argparse.ArgumentParser()
 parser.add_argument("dir",
                     help="the directory containing the evolutionary logs.")

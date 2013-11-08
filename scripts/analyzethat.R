@@ -4,136 +4,117 @@ library(outliers)
 library(tableplot)
 library(ggplot2)
 library(doBy)
+library(reshape2)
 options(width=256)
 CEXAXIS <- 0.51
 
 args<-commandArgs(TRUE)
 separator = "\n\n"
+#Prepare runs data
 #evoresults = read.table(args[1], header=TRUE)
 evoresults = read.table("~/Documents/thesis/phdsupport/data/representation/analysis/grouped_evolution.txt", header=TRUE)
 fresults = evoresults[ evoresults$Evaluations < 1000000 & evoresults$Problem != "<NA>" & !is.nan(evoresults$Best) & evoresults$Best < 0.01,]
-#|| evoresults$Problem == 'harmonic',]
-#fresults = fresults[fresults$Best < 0.01,]
-#print(fresults[0:10])
-#fresults <- rbind(evoresults[evoresults$Problem == "harmonic",], fresults)
 fresults$Problem <- factor(fresults$Problem)
 fresults$Experiment <- factor(fresults$Experiment)
-dev.new()
-#b = boxplot(Evaluations ~interaction(Problem,Experiment), fresults,las=3, outline = FALSE, main="Number of Evaluations to succeed",col=(c("green","red",'blue','yellow')))
+#Prepare summary stats
+factors = list(fresults$Problem, fresults$Experiment)
+sumresults = describeBy(fresults$Evaluations, factors, na.rm=TRUE, mat=TRUE)
+#print(sumresults)
+ordersum <- orderBy(~group1+group2, data=sumresults)
+#Filter problems with generalisation
+spresults <- split(fresults,fresults$Problem)
+genresults = rbind(spresults[["harmonic"]],spresults[[ "pendulum"]])
+genresults = genresults[genresults$Validation < 1000000,]
+genresults$Problem <- factor(genresults$Problem)
+genresults$Experiment <- factor(genresults$Experiment)
+#Prepare validation stats
+sumgen =  describeBy(genresults$Validation, list(genresults$Problem,genresults$Experiment), mat=TRUE)
+
+plotruns = '--plotruns' %in% args[]
+if(plotruns){  
+"PLOTRUNS
+ Plots the boxplots of the number of evaluations and barplot with sucess rate for each problem, and the error bars for the #evaluations."
 ggplot(data = fresults, aes(x = Experiment, y = Evaluations, fill = Problem)) + 
   geom_boxplot()+
   facet_grid(Problem ~ .) +
   theme(axis.text.x=element_text(angle=-90))+
   theme(legend.position = "none")
+ggsave('boxplot_evaluations.pdf')
 
-factors = list(fresults$Problem, fresults$Experiment)
-sumresults = describeBy(fresults$Evaluations, factors, na.rm=TRUE, mat=TRUE)
-print(sumresults)
-
-dev.new()
 ggplot(data = sumresults, aes(x=group2, y = mean, colour=group1, ymin=mean-se,ymax=mean+se)) +
   facet_grid(group1 ~ .) +
   geom_line() +
   geom_point() +
   geom_errorbar(width=.3,position='dodge') +
   theme(axis.text.x=element_text(angle=-90)) +
-  theme(legend.position = "none")
-#error.bars(fresults$Evaluations, stats=sumresults, xlab=sumresults$group1+":"+sumresults$group2, ylab="Number of Evaluations with 95% confidence" )
-ordersum <- orderBy(~group1+group2, data=sumresults)
+  theme(legend.position = "none") +
+  xlab('Experiment') +
+  ylab('Mean number of evaluations')
+ggsave('errorbars_evaluations.pdf')
+
 textable = xtable(ordersum[c(2,3,5:7,10)],
                            digits=c(0, 0, 0, 0, 0, 0, 0),
 				  caption="Summary of the results for the Symbolic Regression experiments.",
 				  label="table:summary-symb")
 print(textable, file = "summary-symb.tex")
 cat(separator)
-normcount = sumresults$n /100
-dev.new()
-#barplot(normcount, main='Successful Runs(%)', names.arg = sumresults$group1, cex.names=CEXAXIS)
-ggplot(data = sumresults, aes(x = group2, y=n/100, fill=group1)) + 
+
+ggplot(data = sumresults, aes(x = group2, y=n, fill=group1)) + 
   geom_bar(stat='identity')+
   facet_grid(group1 ~ .)+
   theme(axis.text.x=element_text(angle=-90)) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  xlab('Experiment') +
+  ylab('Success Rate (%)')
+ggsave('success.pdf')
+}
 
-#for univariate normality testing
-#qqnorm(fresults$V7[V1 == 'symb'])
-#qqline(fresults$V7[V1 == 'symb'])
 
-#non parametric
-spresults <- split(fresults,fresults$Problem)
-#spresults$Experiment <- factor(spresults$Experiment)
+compare = '--compare' %in% args[]
+if(compare){  
+"COMPARE
+ Performs the statistical tests over the number of evaluations of the runs and plots the result in a graphical matrix."
+
 for (i in 1:length(spresults)) {
   print(spresults[[i]]$Problem[1])
   kr = kruskal.test(spresults[[i]]$Evaluations ~spresults[[i]]$Experiment)
   print(kr)
   #mann-whitney for each pair
   pw_kr = pairwise.wilcox.test(spresults[[i]]$Evaluations, spresults[[i]]$Experiment,
-  alternative="less",p.adj="bonferroni",paired=FALSE,exact=FALSE)
+  alternative="less",p.adj="none",paired=FALSE)
   print(pw_kr)
-  dev.new()
-  pmatrix = pw_kr[['p.value']]
-  pmatrix <- pmatrix[order(rownames(pmatrix))]
-  heatmap(pw_kr[['p.value']])
-  dev.off()
-  pw_kr2 = pairwise.wilcox.test(spresults[[i]]$Evaluations, spresults[[i]]$Experiment,
-  alternative="greater",p.adj="bonferroni",paired=FALSE,exact=FALSE)
-  print(pw_kr2)
-  #zz = qnorm(pw_kr$p.value)
-  #print(zz)
-  print("parametric tests...")
-  aovresults <- aov(Evaluations~Experiment,data=spresults[[i]])
-  print(summary(aovresults))
-  tuk = TukeyHSD(aovresults)
-  print(tuk)
-  #dev.new()
-  #plot(tuk)
-  spnames <- strsplit(rownames(tuk$Experiment),'-')
-  spnames0 <- sapply(spnames,'[', 1)
-  spnames1 <- sapply(spnames,'[', 2)
-  newtuk <- data.frame(as.numeric(tuk$Experiment[,4]),spnames0,spnames1)
-  #sptuk <- rbind(tuk$Experiment,spnames)
-  #newtuk <- as.matrix(newtuk)
-  colnames(newtuk) <- c('padj','x','y')
-  newtuk$x <- factor(newtuk$x)
-  newtuk$y <- factor(newtuk$y)
-  #print(newtuk)
-  newtuk$padj1 <- cut(newtuk$padj,breaks=c(0,0.05,1.1),right=FALSE)
- # dev.new()
-  ggplot(data=newtuk, aes(x, y), colour='white') +
-    geom_tile(aes(fill=padj1)) +
-      scale_fill_brewer(palette = "PRGn")+
-        theme(axis.text.x=element_text(angle=-90)) +
-          labs(x='', y='')
-  ggsave(paste(c('tukey',i,'.pdf'),collapse=''))
- 
-                                        # +
-      #scale_fill_gradient(low = "white",high = "steelblue")
-  #heatmap(as.matrix(newtuk), Rowv=NA, Colv=NA, col = cm.colors(256), scale="column", margins=c(5,10))
-  #cat(separator)
+  pwtable <- melt(pw_kr[['p.value']])
   
+  pw_kr2 = pairwise.wilcox.test(spresults[[i]]$Evaluations, spresults[[i]]$Experiment,
+  alternative="greater",p.adj="none",paired=FALSE)
+  print(pw_kr2)
+  pwtable2 <- melt(pw_kr2[['p.value']])
+  
+  pwtable$value2 <- pwtable2$value
+  pwtable$Difference[pwtable$value < 0.05/18] <- 'less'
+  pwtable$Difference[pwtable$value2 < 0.05/18] <- 'greater'
+  pwtable$Difference[pwtable$value > 0.05/18 & pwtable$value2 > 0.05/18] <- 'indifferent'
+
+  pwtable$Var1 <- factor(pwtable$Var1, levels=sort(unique(pwtable$Var1), decreasing=TRUE))
+  #print(pwtable)
+  #dev.new()
+  ggplot(data=pwtable, aes(x=Var2,y=Var1)) +
+    geom_tile(aes(fill=Difference))+
+    theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+    scale_fill_brewer(palette = "PRGn",drop=FALSE) +
+    theme(axis.text.x=element_text(angle=-90)) +
+    xlab('') + ylab('') +
+    opts(aspect.ratio = 1)
+  prob <- toString(spresults[[i]]$Problem[1])
+  ggsave(paste(c('r0mw_',prob,'.pdf'),collapse=''))
+}
 }
 
-#quit()
-#
-#parametric
-#ow = oneway.test(fresults$Evaluations~fresults$Experiment)
-#print(ow)#pairwise; what about correction?
-#cat(separator)
-#changing p.adj results in apparently incoherent p-values
-#pw_ow = pairwise.t.test(fresults$Evaluations, fresults$Experiment, p.adj="none",pool.sd=F)
-#print(pw_ow)
-#cat(separator)
+gen = '--gen' %in% args
+if(gen){  
+"GENERALISATION
+ Performs the analysis of the Validation variable with statistical tests, and plots the results."
 
-##GENERALIZATION
-print('###GENERALIZATION###')
-#genresults = rbind(fresults[fresults$Validation > 0.0,] , evoresults[evoresults$Problem == 'harmonic',])
-#genresults = rbind(fresults[fresults$Problem == "harmonic",], fresults[fresults$Problem == "pendulum",])
-genresults = rbind(spresults[["harmonic"]],spresults[[ "pendulum"]])
-genresults = genresults[genresults$Validation < 1000000,]
-#genresults = fresults
-genresults$Problem <- factor(genresults$Problem)
-genresults$Experiment <- factor(genresults$Experiment)
-sumgen =  describeBy(genresults$Validation, list(genresults$Problem,genresults$Experiment), mat=TRUE)
 textable = xtable(sumgen[c(2,4:6,10)], 
                          digits=c(4, 4, 0, 5,5,6),
 				  caption="Summary of the extrapolation results for each experiment.",
@@ -147,38 +128,76 @@ hgen <- sumgen[sumgen$group1 == "harmonic",]
 hgen$mean <- hgen$mean / max(hgen$mean)
 hgen$se <- hgen$se / max(hgen$se,na.rm=TRUE)
 normgen <- rbind(pgen,hgen)
-#sumgen <- normalise(sumgen, "mean", by="group1")
-#print(normgen)
-#normcount = sumgen$n / sumresults$n
-#dev.new()
-#barplot(normcount, main='Success(%)', newtuk.arg = sumresults$group1, cex.newtuk=CEXAXIS)
-
-#dev.new()
-#error.bars(stats=sumgen, labels=sumgen$group2, ylab="Generalization Error" )
-#print(normgen)
-dev.new()
-ggplot(data = normgen, aes(x=group2, y = mean, colour=group1, ymin=mean-se,ymax=mean+se)) +
-  facet_grid(group1 ~ .) +
-  geom_line() +
-  geom_point() +
-  geom_errorbar(width=.3,position='dodge') +
-  theme(axis.text.x=element_text(angle=-90)) +
-  theme(legend.position = "none")
 
 genresults <- split(genresults,genresults$Problem)
 for(i in 1:length(genresults)){
   print(genresults[[i]]$Problem[1])
+  prob <- toString(genresults[[i]]$Problem[1])
+  ggplot(data = sumgen[sumgen$group1==prob,], aes(x=group2,y=Validation)) +
+    geom_line(aes(y=min)) +
+      geom_point(aes(y=mean)) +
+        geom_errorbar(aes(y=mean,ymin=min,ymax=max),width=.3,position='dodge') +
+  #ggplot(data=genresults[[i]],aes(x=Experiment,y=Validation) ) +
+   # geom_line(aes(y=min(genresults[[i]]$Validation)))+
+    #geom_boxplot(aes(lower=min(genresults[[i]]$Validation),upper=max(genresults[[i]]$Validation))) +
+          theme(axis.text.x=element_text(angle=-90)) +
+            theme(legend.position = "none") +
+              xlab('Experiment') + ylab('Mean Fitness')
+  ggsave(paste(c('r0gen_',prob,'.pdf'),collapse=''))
+
+  if(prob == 'harmonic')
+    print(genresults[[i]][which(genresults[[i]]$Validation==min(genresults[[i]]$Validation)),])
+  else
+    print(genresults[[i]][which(genresults[[i]]$Validation==max(genresults[[i]]$Validation)),])
   kr2 = kruskal.test(genresults[[i]]$Validation ~genresults[[i]]$Experiment)
   print(kr2)
   cat(separator)
   #mann-whitney for each pair
-  pw_kr2 = pairwise.wilcox.test(genresults[[i]]$Validation, genresults[[i]]$Experiment, alternative="less", p.adj="bonferroni",paired=FALSE)
-  print(pw_kr2)
-  pw_kr2 = pairwise.wilcox.test(genresults[[i]]$Validation, genresults[[i]]$Experiment, alternative="greater", p.adj="bonferroni", paired=FALSE)
+  pw_kr = pairwise.wilcox.test(genresults[[i]]$Validation, genresults[[i]]$Experiment, alternative="less", p.adj="bonferroni",paired=FALSE, na.rm=TRUE)
+  print(pw_kr)
+  pw_kr2 = pairwise.wilcox.test(genresults[[i]]$Validation, genresults[[i]]$Experiment, alternative="greater", p.adj="bonferroni", paired=FALSE, na.rm=TRUE)
   print(pw_kr2)
   cat(separator)
+  pwtable <- melt(pw_kr[['p.value']])
+  pwtable2 <- melt(pw_kr2[['p.value']])
+  pwtable$value2 <- pwtable2$value
+  pwtable$Difference[pwtable$value < 0.05] <- 'less'
+  pwtable$Difference[pwtable$value2 < 0.05] <- 'greater'
+  pwtable$Difference[pwtable$value > 0.05 & pwtable$value2 > 0.05] <- 'indifferent'
+
+  pwtable$Var1 <- factor(pwtable$Var1, levels=sort(unique(pwtable$Var1), decreasing=TRUE))
+  pwtable$Difference <- factor(pwtable$Difference, levels=c('greater','indifferent','less'))#print(pwtable)
+  #dev.new()
+  ggplot(data=pwtable, aes(x=Var2,y=Var1)) +
+    geom_tile(aes(fill=Difference))+
+    theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
+    scale_fill_brewer(palette = "PRGn",drop=FALSE) +
+    theme(axis.text.x=element_text(angle=-90)) +
+    xlab('') + ylab('') +
+    opts(aspect.ratio = 1)
+  #prob <- toString(spresults[[i]]$Problem[1])
+  ggsave(paste(c('r0mwgen_',prob,'.pdf'),collapse=''))
+  
+}
 }
 
+compare = '--test' %in% args
+if(compare){  
+print("TESTING")
+prob = 'pendulum'
+prob = 'harmonic'
+harm <- sumresults[sumresults$group1 == prob,]
+harmgen <- sumgen[sumgen$group1 == prob,]
+harm$mean.validation <- harmgen$mean
+#print(sumgen)
+#print(harm)
+dev.new()
+ggplot(harm, aes(x=mean,y=mean.validation)) +
+  geom_point() +
+    geom_smooth(method='lm')
+}
+traceback()
+quit()
 
 "
 print('###MUTATIONS###')

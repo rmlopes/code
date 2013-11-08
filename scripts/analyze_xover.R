@@ -12,49 +12,44 @@ CEXAXIS <- 0.51
 args<-commandArgs(TRUE)
 separator = "\n\n"
 evoresults = read.table(args[1], header=TRUE)
+#evoresults <- read.table("~/Documents/thesis/phdsupport/data/ops/analysis/grouped_evolution.txt", header=TRUE)
 
 #Prepare run data
 fresults <- evoresults[ evoresults$Evaluations < 1000000 & !is.nan(evoresults$Best) & evoresults$Best < 0.01 & !is.na(evoresults$Problem),]
 fresults$Problem <- factor(fresults$Problem)
 fresults$Op <- factor(fresults$Op)
-fresults$OpLength[fresults$Op == 'GCD'] <- 'other'
-fresults$OpLength[fresults$Op == 'rnd7F'] <- 'other'
-fresults$OpLength[fresults$Op != 'rnd7F' & fresults$Op != 'GCD'] <- fresults$OpSize[fresults$Op != 'rnd7F' & fresults$Op != 'GCD']
-slabels = levels(fresults$OpSize)
-slabels[1] = 'other'
-slabels[6] = 'other'
-slabels <- slabels[-1]
-fresults$OpLength <- factor(fresults$OpLength,labels=slabels)
-fresults$Rates <- factor(fresults$Rates)
-fresults$kosher <- as.factor(paste(fresults$Op,fresults$Rates,fresults$OpLength,sep='.'))
+fresults$Rate <- factor(fresults$Rate)
+fresults$kosher <- as.factor(paste(fresults$Op,fresults$Rate,sep='.'))
 temp = fresults[fresults$Op != 'rnd7F',]
 splitres <- split(temp, temp$Problem)
 #Prepare summary of data
-sumresults = describeBy(fresults$Evaluations,interaction(fresults$Problem,fresults$Op,fresults$Rates, fresults$OpLength),mat=FALSE)
+sumresults = describeBy(temp$Evaluations,interaction(temp$Problem,temp$Op,temp$Rate),mat=FALSE)
+#print(sumresults)
 sumresultsb <- do.call("rbind",sumresults)
 sumresultsb <- sumresultsb[order(rownames(sumresultsb)),]
+print(sumresultsb)
 rnames <- as.vector(rownames(sumresultsb))
 splitted <- strsplit(rnames,c('[.]'))
-splitm <- matrix(unlist(splitted), ncol=4, byrow=TRUE)
-factorvars <- cbind(as.data.frame(splitm),sumresultsb)
+splitm <- as.data.frame(matrix(unlist(splitted), ncol=4, byrow=TRUE))
+splitm <- data.frame(splitm[,1:2], V3=paste(splitm$V3,splitm$V4,sep='.'))
+factorvars <- cbind(splitm,sumresultsb)
 #Filter problem with generalisation
 genresults = rbind(splitres[["harmonic"]],splitres[[ "pendulum"]])
 genresults = genresults[genresults$Validation < 1000000,]
 genresults$Problem <- factor(genresults$Problem)
 genresults$Op <- factor(genresults$Op)
-genresults$OpLength <- factor(genresults$OpLength)
-genresults$Rates <- factor(genresults$Rates)
+genresults$Rate <- factor(genresults$Rate)
 genresults$kosher <- factor(genresults$kosher)
 
 plotruns = '--plotruns' %in% args[]
 if(plotruns){  
-"PLOTRUNS
- Plots the boxplots of the number of evaluations and barplot with sucess rate for each problem."
+  "PLOTRUNS
+   Plots the boxplots of the number of evaluations and barplot with sucess rate for each problem."
 
 splitres <- split(fresults, fresults$Problem)
 for(i in 1:length(splitres)){
   prob = toString(splitres[[i]]$Problem[1])
-  p <- ggplot(data = splitres[[i]][splitres[[i]]$Op != 'rnd7F',], aes(x = Rates, y = Evaluations,fill=OpLength)) + 
+  p <- ggplot(data = splitres[[i]][splitres[[i]]$Op != 'rnd7F',], aes(x = Rate, y = Evaluations)) + 
     geom_boxplot()+#outlier.shape=NA)+
     #coord_cartesian(ylim=c(0, 40000)) +
     facet_grid(~Op) +
@@ -64,7 +59,7 @@ for(i in 1:length(splitres)){
     p <- p +  coord_cartesian(ylim=c(0, 100000))
   ggsave(paste(c('boxplot_', prob , '.pdf'),collapse=''))
 
-  ggplot(data=splitres[[i]][splitres[[i]]$Op != 'rnd7F',], aes(x=Rates,fill=OpLength)) +
+  ggplot(data=splitres[[i]][splitres[[i]]$Op != 'rnd7F',], aes(x=Rate)) +
     geom_bar(stat='bin',position='dodge') +
      #coord_flip() +
       facet_grid(~Op) +
@@ -78,13 +73,13 @@ if(success){
 "PLOTSUCCESS
 Plots the  barplot with success rate for each problem."
 
-ggplot(data=fresults[fresults$Op != 'rnd7F',], aes(x=Rates,fill=OpLength)) +
+ggplot(data=fresults[fresults$Op != 'rnd7F',], aes(x=Op,fill=Rate)) +
   geom_bar(stat='bin',position='dodge') +
   #coord_flip() +
-  facet_grid(Problem~Op) +
+  facet_grid(Problem~.) +
   theme(axis.text.x=element_text(angle=-90)) +
   ylab('Success Rate (%)')
-ggsave('r1success.pdf')
+ggsave('success.pdf')
 }
 
 "
@@ -104,6 +99,7 @@ if(compare){
 for(i in 1:length(splitres)){
   prob = toString(splitres[[i]]$Problem[1])
   print(prob)
+  splitres[[i]] <- splitres[[i]][order(splitres[[i]]$kosher),]
   kr = kruskal.test(splitres[[i]]$Evaluations ,splitres[[i]]$kosher)
   print(kr)
   cat(separator)
@@ -111,7 +107,7 @@ for(i in 1:length(splitres)){
   pw_kr = pairwise.wilcox.test(splitres[[i]]$Evaluations, splitres[[i]]$kosher,
     alternative='less',p.adj='bonferroni')
   pwtable <- melt(pw_kr[['p.value']])
-  #print(pw_kr)
+  print(pw_kr)
   pw_kr2 = pairwise.wilcox.test(splitres[[i]]$Evaluations, splitres[[i]]$kosher,
     alternative='greater',p.adj='bonferroni')
   pwtable2 <- melt(pw_kr2[['p.value']])
@@ -132,7 +128,7 @@ for(i in 1:length(splitres)){
     theme(axis.text.x=element_text(angle=-90)) +
     xlab('') + ylab('') +
     opts(aspect.ratio = 1)
-  ggsave(paste(c('r1mw_',prob,'.pdf'),collapse=''))
+  ggsave(paste(c('mw_',prob,'.pdf'),collapse=''))
 }
 }
 
@@ -141,19 +137,18 @@ if(gen){
 "GENERALISATION
  Performs the analysis of the Validation variable with statistical tests, and plots the results."
 #print(genresults[[1]])
-sumgen =  describeBy(genresults$Validation, interaction(genresults$Problem,genresults$Op,genresults$Rates, genresults$OpLength), mat=FALSE)
+sumgen =  describeBy(genresults$Validation, interaction(genresults$Problem,genresults$Op,genresults$Rate), mat=FALSE)
 
 sumgenb <- do.call("rbind",sumgen)
 sumgenb <- sumgenb[order(rownames(sumgenb)),]
 rnames <- as.vector(rownames(sumgenb))
 splitted <- strsplit(rnames,c('[.]'))
-splitm <- matrix(unlist(splitted), ncol=4, byrow=TRUE)
-factoredgen <- cbind(as.data.frame(splitm),sumgenb)
+splitm <- as.data.frame(matrix(unlist(splitted), ncol=4, byrow=TRUE))
+splitm <- data.frame(splitm[,1:2], V3=paste(splitm$V3,splitm$V4,sep='.'))
+factoredgen <- cbind(splitm,sumgenb)
 factoredgen$V1 <- factor(factoredgen$V1)
 factoredgen$V2 <- factor(factoredgen$V2)
 factoredgen$V3 <- factor(factoredgen$V3)
-factoredgen$V4 <- factor(factoredgen$V4)
-
 "
 textable = xtable(sumgen[c(2,4:6,10)], 
                          digits=c(4, 4, 0, 5,5,6),
@@ -170,15 +165,15 @@ for(i in 1:length(spresults)){
   #print(genresults[[i]])
   prob <- toString(spresults[[i]]$Problem[1])
   print(prob)
-  ggplot(data = factoredgen[factoredgen$V1==prob,], aes(x=V3,y=mean,fill=V4)) +
+  ggplot(data = factoredgen[factoredgen$V1==prob,], aes(x=V3,y=mean)) +
     facet_grid(~V2) +
     #geom_line(aes(y=min)) +
-      geom_point(aes(colour=V4),size=1.5,position=position_dodge(width=0.3)) +
-        geom_errorbar(aes(ymin=min,ymax=max,colour=V4),width=.3,position='dodge') +
+      geom_point(size=1.5,position=position_dodge(width=0.3)) +
+        geom_errorbar(aes(ymin=min,ymax=max),width=.3,position='dodge') +
           theme(axis.text.x=element_text(angle=-90)) +
             #theme(legend.position = 'none') +
               xlab('Experiment') + ylab('Mean Fitness')
-  ggsave(paste(c('r1gen_',prob,'.pdf'),collapse=''))
+  ggsave(paste(c('gen_',prob,'.pdf'),collapse=''))
 
   if(prob == 'harmonic'){
     print(spresults[[i]][which(spresults[[i]]$Validation==min(spresults[[i]]$Validation)),])
@@ -213,7 +208,7 @@ for(i in 1:length(spresults)){
     xlab('') + ylab('') +
     opts(aspect.ratio = 1)
   #prob <- toString(spresults[[i]]$Problem[1])
-  ggsave(paste(c('r1mwgen_',prob,'.pdf'),collapse=''))
+  ggsave(paste(c('mwgen_',prob,'.pdf'),collapse=''))
 }
 }
 
@@ -221,7 +216,7 @@ compare = '--baseline' %in% args[]
 if(compare){  
 "COMPARE BASELINE
  Performs the statistical tests over the number of evaluations of the runs versus the baseline results."
-
+print(describeBy(fresults[fresults$Op == 'rnd7F',],fresults[fresults$Op == 'rnd7F',]$Problem))
 wt <- data.frame(problem = character(0), rname = character(0), pvalue = numeric(0))
 for(i in 1:length(splitres)){
   prob = toString(splitres[[i]]$Problem[1])
@@ -244,16 +239,18 @@ for(i in 1:length(splitres)){
   }
 }
 splitted <- strsplit(as.matrix(wt$V3),c('[.]'))
-splitm <- matrix(unlist(splitted), ncol=3, byrow=TRUE)
+splitm <- as.data.frame(matrix(unlist(splitted), ncol=3, byrow=TRUE))
+splitm <- data.frame(splitm[,1], V2=paste(splitm$V2,splitm$V3,sep='.'))
 
-wt2 <- data.frame(wt$prob,as.data.frame(splitm),as.matrix(wt$p.value),stringsAsFactors = FALSE)
-colnames(wt2) <- c('V1','V2','V3','V4','pvalue')
+wt2 <- data.frame(wt$prob,splitm,as.matrix(wt$p.value),stringsAsFactors = FALSE)
+colnames(wt2) <- c('V1','V2','V3','pvalue')
 #print(wt2)
 wt2$Result[wt2$pvalue < 0.05] <- 'less'#ifelse(wt$pvalue < 0.05,1,0)
 wt2$Result[wt2$pvalue >= 0.05] <- 'not significant'#
+wt2$Result <- factor(wt2$Result, levels=c('less','not significant'))
 print(wt2)
-ggplot(data=wt2, aes(x=V3,y=V4)) +
-  facet_grid(V1~V2) +
+ggplot(data=wt2, aes(x=V3,y=V2)) +
+  facet_grid(~V1) +
     geom_tile(aes(fill=Result))+
     theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
     scale_fill_brewer(palette = 'PRGn',drop=FALSE) +
@@ -261,7 +258,7 @@ ggplot(data=wt2, aes(x=V3,y=V4)) +
     xlab('') + ylab('') +
     opts(aspect.ratio = 1)
   #prob <- toString(spresults[[i]]$Problem[1])
-  ggsave(paste(c('r1compbaseline.pdf'),collapse=''))
+  ggsave(paste(c('compbaseline.pdf'),collapse=''))
 }
 
 compare = '--test' %in% args
