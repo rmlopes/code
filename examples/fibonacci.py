@@ -3,8 +3,8 @@ from code.evodevo import *
 from code.operators import *
 from code.rencode import *
 from code.utils.mathlogic import *
-from code.epicode import LocalSearch,EpiCoDeAgent
-
+#from code.epicode import LocalSearch,EpiCoDeAgent
+from code.utils.config import *
 
 class Fibonacci(ReNCoDeProb):
 	terms = ['inputs[0]','inputs[1]']
@@ -13,10 +13,11 @@ class Fibonacci(ReNCoDeProb):
 		ReNCoDeProb.__init__(self,evaluate)
 		self.labels['inputs[0]'] = '0'
 		self.labels['inputs[1]'] = '1'
-    
 
-def evaluate(circuit, nelems = 10):
-	if not any([cnodeinput < 0 
+
+def evaluate(ind, nelems = 10, **kwargs):
+        circuit = ind.getcircuit()
+	if not any([cnodeinput < 0
 		    for c in circuit
 		    for cnodeinput in c[2]]):
 		return nelems + 1
@@ -41,14 +42,15 @@ def evaluate(circuit, nelems = 10):
 				ok += 1
 			last2 = last1
 			last1 = expected
-	return  nelems - ok    
+	return  nelems - ok
 
 if __name__ == '__main__':
     p  = Fibonacci(evaluate)
     #print sys.argv
-    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,EpiCoDeAgent)
+    random.seed(1234*int(os.getenv('SGE_TASK_ID')))
+    cfg = loadconfig(parsecmd())
+    edw = EvoDevoWorkbench(cfg,p)
     edw.run()
-    genresult = evaluate(edw.best.circuit, 100)
-    print 'Generalization: '
-    print genresult
-
+    genresult = evaluate(edw.best.phenotype, 100)
+    print 'Generalization: ', genresult
+    edw.runlog.validatelog.critical(genresult)

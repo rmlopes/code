@@ -3,16 +3,17 @@ from code.evodevo import *
 from code.operators import *
 from code.rencode import *
 from code.utils.mathlogic import *
+from code.utils.config import *
 
-class BooleanProb(ReNCoDeProb):	
-	labels = {'and_':'AND', 
-                  'or_':'OR', 
-                  'nand':'NAND', 
+class BooleanProb(ReNCoDeProb):
+	labels = {'and_':'AND',
+                  'or_':'OR',
+                  'nand':'NAND',
                   'nor':'NOR',
                   'inputs[0]':'INP'}
         funs = [ 'and_', 'or_', 'nand', 'nor','and_','or_','nand','nor']
         feedback = True
-        
+
 
 def test(circuit, rangelist ):
     ok = 0
@@ -23,8 +24,9 @@ def test(circuit, rangelist ):
 
     return len(rangelist) - ok
 
-def evaluate(circuit, nbits = 3):
-	if not any([cnodeinput < 0 
+def evaluate(pheno, nbits = 3, **kwargs):
+        circuit = pheno.getcircuit()
+	if not any([cnodeinput < 0
 		    for c in circuit
 		    for cnodeinput in c[2]]):
 		return pow(2,nbits)
@@ -33,18 +35,18 @@ def evaluate(circuit, nbits = 3):
 		t = BitStream(uint=cur,length=nbits)
 		resultdict = dict(zip([c[0] for c in circuit],[1]*len(circuit)))
 		for i in list(t.bin[:]):
-                    result = evaluatecircuit(circuit, regressionfun, 
+                    result = evaluatecircuit(circuit, regressionfun,
                                              resultdict, i)
                 if int(result) == int(t.count(1)%2):
 			ok += 1
-                        
+
         return  pow(2,nbits) - ok
 
 if __name__ == '__main__':
     p  = BooleanProb(evaluate)
-    edw = EvoDevoWorkbench(sys.argv[1],p,buildcircuit,ReNCoDeAgent)
+    cfg = loadconfig(parsecmd())
+    edw = EvoDevoWorkbench(cfg,p)
     edw.run()
-    genresult = test(ewd.best.circuit, range(2,20))
-    print 'Generalization: '
-    print genresult
-
+    genresult = test(edw.best.phenotype, range(2,20))
+    print 'Generalization: ', genresult
+    edw.runlog.validatelog.critical(genresult)
