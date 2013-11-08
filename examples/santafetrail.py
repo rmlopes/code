@@ -38,3 +38,4 @@ if __name__ == '__main__':
         cfg = loadconfig(parsecmd())
         edw = EvoDevoWorkbench(cfg,p)
         edw.run()
+        edw.runlog.validatelog.critical(edw.best.moves)

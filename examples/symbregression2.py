@@ -1,4 +1,5 @@
 from symbregression import *
+import os
 
 class KeijzerProb(ReNCoDeProb):
         #extrafuns = ['exp_','min_','max_','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']

@@ -117,7 +117,7 @@ def evaluatekeijzer(circuit, target, inputs, printY = False):
         return mse
 
 
-def wrapevaluate(circuit, target, inputs, device, test = False):
+def wrapevaluate(circuit, target, inputs, device, test = False, **kwargs):
     if device.__name__ == 'code.rencode' or device.__name__ == 'code.gearnet':
         return evaluatekeijzer(circuit, target, inputs, test)
     else:

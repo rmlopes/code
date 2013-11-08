@@ -80,7 +80,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         # initial conditions (as used by Stanley)
     inits = []
     if not test:
-        for i in range(10):
+        for i in range(1):
             x         = random.randint(0, 4799)/1000.0 - 2.4
             x_dot     = random.randint(0, 1999)/1000.0 - 1.0
             theta     = random.randint(0,  399)/1000.0 - 0.2
@@ -103,41 +103,6 @@ def evaluate_individual(phenotype, test = None, **kwargs):
         x, x_dot, theta, theta_dot = t
         fitness = 0
         for trials in xrange(num_steps):
-
-        # maps into [0,1]
-        # RL-NOTE: x_dot and theta_dot may go outside the defined
-        # boundaries: how to normalize then?
-        # modified to match Nicolau et al 2010 description.
-        #inputs = np.array([(x + 2.4)/4.8,
-        #                   (x_dot + 0.75)/1.5,
-        #                   (theta + twelve_degrees)/0.41,
-        #                   (theta_dot + 1.0)/2.0],
-        #                  dtype = float)
-            #inputs = np.array([(x + 2.4)/4.8,
-             #              (x_dot + 1.0)/2.0,
-              #             #(theta + twelve_degrees)/0.41,
-               #            (theta + TWELVE_DEGREES)/( 2*TWELVE_DEGREES),
-                #           (theta_dot + 1.5)/3.0],
-                 #         dtype = float)
-        # maps into cc [0,.1]
-            #inputs *= .1
-            #for i in range(len(inputs)):
-             #   if inputs[i] > .1:
-              #          inputs[i] = .1
-               # elif inputs[i] < 0:
-                #        inputs[i] = .0
-
-        # a normalizacao so acontece para estas condicoes iniciais
-        # nada garante que a evolucao do sistema leve a outros
-        # valores de x, x_dot e etc...
-        #print inputs
-            #phenotype.nstepsim(kwargs['simtime'],*inputs)
-        #output =
-        # np.sum(np.gradient(phenotype.effectorhist[outidx][leftlim-1:]))
-        #NOTE: only valid for samplerate =1 .0
-            #output = (phenotype.effectorhist[outidx][-1] -
-             #         phenotype.effectorhist[outidx][-2])
-
             output = phenotype(*(x, x_dot, theta, theta_dot))
         #print output
         # Apply action to the simulated cart-pole
@@ -149,7 +114,7 @@ def evaluate_individual(phenotype, test = None, **kwargs):
 
         # Check for failure.  If so, return steps
         # the number of steps indicates the fitness: higher = better
-            fitness += 1
+        fitness += 1
             last = output
         #RL-NOTE: original does not check for the speed boundaries
         # Problem description in Nicoulau et al. 2010 shows closed
@@ -193,7 +158,7 @@ if __name__ == "__main__":
     assert len(inputs) == 625
     results = []
     for i in inputs:
-        fit = p.eval_(edw.best.phenotype, i, test=True)
+        fit = p.eval_(edw.best.phenotype, i)
         if fit < 0.000000001:
             results.append(0)
         else:
