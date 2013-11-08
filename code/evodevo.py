@@ -214,10 +214,11 @@ class EvoDevoWorkbench:
 
                 if not self.interactive:
                     if len(offsprings) < self.popsize:
+                        pr = self.popratio if self.popratio > 1 else self.popsize
                         mutants = [self._create_mutant(p)
                                    for p in self.parents
                                    for i in range( \
-                                                   int(ceil((self.popsize - len(offsprings))/float(self.popratio))))]
+                                                   int(ceil((self.popsize - len(offsprings))/float(pr))))]
                         self.population = (offsprings +
                                        mutants[:(self.popsize-len(offsprings))])
                 else:
