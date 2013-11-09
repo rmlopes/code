@@ -11,8 +11,8 @@ CEXAXIS <- 0.51
 args<-commandArgs(TRUE)
 separator = "\n\n"
 #Prepare runs data
-#evoresults = read.table(args[1], header=TRUE)
-evoresults = read.table("~/Documents/thesis/phdsupport/data/representation/analysis/grouped_evolution.txt", header=TRUE)
+evoresults = read.table(args[1], header=TRUE)
+#evoresults = read.table("~/Documents/thesis/phdsupport/data/representation/analysis/grouped_evolution.txt", header=TRUE)
 fresults = evoresults[ evoresults$Evaluations < 1000000 & evoresults$Problem != "<NA>" & !is.nan(evoresults$Best) & evoresults$Best < 0.01,]
 fresults$Problem <- factor(fresults$Problem)
 fresults$Experiment <- factor(fresults$Experiment)
@@ -185,7 +185,17 @@ compare = '--test' %in% args
 if(compare){  
 print("TESTING")
 prob = 'pendulum'
-prob = 'harmonic'
+#prob = 'harmonic'
+#np <- fresults$NumProteins
+#dev.new()
+ggplot(genresults[genresults$Problem == prob,], aes(x=Experiment,y=Validation)) +
+  geom_point(aes(colour=NumFunctions)) +
+    scale_color_gradient2(low="blue",high="red")
+    #geom_smooth(method='lm') +
+      #scale_x_log10() +
+        #scale_y_log10()
+ggsave('test.pdf')
+"
 harm <- sumresults[sumresults$group1 == prob,]
 harmgen <- sumgen[sumgen$group1 == prob,]
 harm$mean.validation <- harmgen$mean
@@ -194,8 +204,13 @@ harm$mean.validation <- harmgen$mean
 dev.new()
 ggplot(harm, aes(x=mean,y=mean.validation)) +
   geom_point() +
-    geom_smooth(method='lm')
+    #geom_smooth(method='lm') +
+      scale_x_log10() +
+        scale_y_log10()
 }
+"
+}
+
 traceback()
 quit()
 
