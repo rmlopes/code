@@ -4,3 +4,5 @@ results/*
 *#*
 *.save
 *.png
+*.e*
+*.o*
