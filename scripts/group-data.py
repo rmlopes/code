@@ -73,6 +73,26 @@ class FilenameParsers:
         def tostr(self,s):
             return s.problem+"\t"+s.op+"\t"+s.rate+"\t"+s.idx
 
+    class feedback:
+        headers = "Problem\tRunIdx\t" + evologhead + "\n"
+        def parsefilename(self,filename):
+            class fn: pass
+            f = fn()
+            tokens = filename.split('_')
+            f.problem =  tokens[0]#.split('-',1)[0]
+            #f.op = tokens[0].split('-')[1]
+
+            #if f.op == "rnd7F":
+            #    f.rate = '0.0'
+            #else:
+             #   f.rate = tokens[0].split('-')[2]
+
+            f.idx = tokens[-1]
+            return f
+
+        def tostr(self,s):
+            return s.problem+"\t"+s.idx
+
 parser = argparse.ArgumentParser()
 parser.add_argument("dir",
                     help="the directory containing the evolutionary logs.")
@@ -101,7 +121,7 @@ for f in files:
     if vlines:
         v = vlines[-1]
     else:
-        v = '0.0\n'
+        v = '-1\n'
     towrite = fnparser.tostr(parsed) +"\t"+lines[-1][:-1]+'\t'+v
     sys.stdout.write(towrite)
 
