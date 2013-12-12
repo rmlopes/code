@@ -40,19 +40,26 @@ def testadder(phenotype, intinps):
         #phenotype.nstepsim(phenotype.simtime,*normalized)
         #out = (phenotype.effectorhist[outidx][-1] -
         #       phenotype.effectorhist[outidx][-2])
-        try:
-                out0,out1 = evaluatecircuit(phenotype.getcircuit(outidx),
-                              regressionfun, dict(),
-                                            *inputs.bin, nout = 2)
-        except:
-                print phenotype.getcircuit(outidx)
-                print inputs.bin
+        #try:
+        out = phenotype(*inputs.bin)
+                #evaluatecircuit(phenotype.getcircuit(outidx),
+                #                                     regressionfun,
+                # mergefun,
+                #                                    dict(),
+                #                                   *inputs.bin, nout = 2)
+        #except:
+         #       print phenotype.getcircuit(outidx)
+          #      print inputs.bin
+        r = BitStream(bin='%i%i'%(int(out[0]),int(out[1])))
+	expected = BitStream(uint = inputs.count(1), length = n-1)
+	ok += (expected ^ r).count(1)
         #print 'OUT: ', out
         #out = 0 if out <= 0 else 1
-        result = int(out0) * 2 + int(out1) * 1
-        if result == inputs.count(1):
+        #out = reduce(lambda x,k: x + ('1' if k else '0'), out, '')
+        #result = BitStream(bin=out).uint
+        #if result == inputs.count(1):
             #print out, inputs
-            ok += 1
+        #    ok += 1
     return ok
 
 def evaluate(phenotype, test = False, nbits = 3, **kwargs):
@@ -70,11 +77,24 @@ def evaluate(phenotype, test = False, nbits = 3, **kwargs):
         bestfit = 0
         bestout = 0
         #print 'ORIGINAL: ',orig_state
-        bestfit = testadder(phenotype, intinps)
-        return len(intinps) - bestfit
+        r = testadder(phenotype, intinps)
+        #return bestfit
+        #r = len(intinps) - bestfit
+        if r == 0:
+            return 0
+        else:
+            #numtf = float(phenotype.arnet.numtf) + 1.0
+            numeff = phenotype.arnet.numeff
+            if numeff > 1:
+                p = 1.0 - 2/float(numeff)#.05 * abs(numeff-2)
+            else:
+                p = 1.0#
+
+            return r + .45*p #(.45 / float(numtf)) + (.45 * p)
 
 if __name__ == '__main__':
-    log.setLevel(logging.DEBUG)
+    #log.setLevel(logging.DEBUG)
+    random.seed(1234)
     #p  = BooleanProb(evaluate)
     evalf = partial(evaluate, nbits=3)
     #mapfun = getoutputp0p1)
@@ -82,7 +102,8 @@ if __name__ == '__main__':
     p = BooleanProb(3,evalf)
     edw = EvoDevoWorkbench(cfg,p)
     #p.eval_ = bindparams(edw.arnconfig, p.eval_)
-    edw.run()
+    edw.run(terminate = (lambda x,y: x ==0 or y <= 0))
+    #edw.run()
 
     #f = open('genome.save','w')
     #f.write(edw.best.phenotype.code.bin)
