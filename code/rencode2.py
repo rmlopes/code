@@ -4,7 +4,7 @@ from bitstring import BitStream
 import math
 import arn
 import rencode
-from rencode import evaluatecircuit, nnlikefun
+from rencode import evaluatecircuit, nnlikefun, mergefun,P
 from arnmiguel import *
 from evodevo import Problem, Agent
 from utils import *
@@ -88,6 +88,7 @@ class RndAgent(ARNGPAgent):
 
 class Phenotype:
     def __init__(self, arnet, problem):
+        self.funskel = nnlikefun
         self.problem = problem
         self.products = arnet.effectorproms
         self.circuits = []
@@ -111,20 +112,30 @@ class Phenotype:
         else:
             queue=[]
             circuit=[]
-            for i in range(arnet.numeff):
-                inps = self.getinputs(arnet.numtf+arnet.numrec+i)
-                fset = problem.funs
-                if not inps:
-                        fset = problem.terms
-                circuit.append((arnet.effectors[i][0],
-                                self.problem.nodemap_(arnet.effectors[i][4],
-                                                      fset),
-                                [inp[0] for inp in inps]))
-                queue.extend(inps)
+            outputs = self.selectoutputs(problem.nout, problem)
+            for o in outputs:
+                #slice-out the index of the output
+                circuit.append(o[:3])
+                queue.extend(self.getinputs(arnet.numtf+arnet.numrec+o[3]))
+            #for i in range(arnet.numeff):
+             #   inps = self.getinputs(arnet.numtf+arnet.numrec+i)
+              #  fset = problem.funs
+              #  if not inps:
+              #          fset = problem.terms
+              #  circuit.append((arnet.effectors[i][0],
+              #                  self.problem.nodemap_(arnet.effectors[i][4],
+              #                                        fset),
+              #                  [inp[0] for inp in inps]))
+              #  queue.extend(inps)
             queue.sort(key=lambda x: x[1], reverse=True)
             #print "Building circuit with this: "
             #print self.printgraph()
             self.circuits.append(self.buildcircuit(queue,circuit))
+            #self.circuitstr = map(lambda x: compile(x,'<string>','eval'),
+             #                     evaluatecircuit(self.circuits[0], mergefun, dict(),
+              #                                    *problem.terms, nout=problem.nout))
+            #self.replaceinp = re.compile('inputs')
+
 
         #map receptors to inputs
         #map tfs to functions
@@ -135,9 +146,16 @@ class Phenotype:
     def __len__(self, index = 0):
         return len(self.circuits[index])
 
-    def __call__(self, *inputs):
+    def __call__(self, *inputs, **kwargs):
+     #   #print self.circuitstr
+        #vardict = dict(globals())
+      #  globals()['inputs']=inputs
+        #print vardict
+        #return map(lambda x: eval(x,globals(),{'inputs':inputs}), self.circuitstr)
+        #print r
+        #return r
         return evaluatecircuit(self.getcircuit(self.output_idx),
-                               nnlikefun,dict(), *inputs)
+                               self.funskel,dict(), *inputs, nout=self.problem.nout)
 
     def __eq__(self, other):
         if len(self.circuits) != len(other.circuits):
@@ -146,6 +164,22 @@ class Phenotype:
             if self.circuits[i] != other.circuits[i]:
                 return False
         return True
+
+    def selectoutputs(self,n, problem):
+        '''Selects the output nodes by number of input edges.'''
+        temp = list()
+        for i in range(self.arnet.numeff):
+            inps = self.getinputs(self.arnet.numtf+self.arnet.numrec+i)
+            fset = problem.funs
+            if not inps:
+                fset = problem.terms
+            temp.append((self.arnet.effectors[i][0],
+                         self.problem.nodemap_(self.arnet.effectors[i][4],
+                                               fset),
+                         [inp[0] for inp in inps],
+                         i))
+        #temp.sort(key=lambda x: len(x[2]), reverse=True)
+        return temp[:n]
 
     def getcircuit(self, index=0):
         return self.circuits[index]
@@ -182,6 +216,7 @@ class Phenotype:
                 #print signature, math.tanh(signature.int)
                 #fun = str(math.tanh(signature.int))
                 fun = str(random.choice([0.0,1.0]))
+                #fun = self.problem.nodemap_(signature,self.problem.terms)
             circuit.append((pnext[0],fun,[i[0] for i in inputs]))
 
             queue.extend(inputs)
@@ -194,6 +229,7 @@ class Phenotype:
         #pmap = zip(self.arnet.promlist+rlist,self.graph[:,index])
         for e,i in zip(self.graph[:,index],
                        range(self.graph.shape[0])):
+                       #range(len(self.arnet.promlist))):
             if e > 0:
                 inputs.append(((self.arnet.promlist + self.arnet.receptorproms)[i],e))
         inputs.sort(key=lambda x: x[1], reverse = True)

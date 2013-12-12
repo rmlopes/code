@@ -20,6 +20,10 @@ import copy
 
 log = logging.getLogger(__name__)
 
+#transcription factors aux index
+TF = 0
+#products aux index
+PR = 1
 
 INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('1'*16 + '0'*16)),
@@ -46,7 +50,7 @@ def _get_all(promoter, genome, excite_offset,genesize):
 def _filteroverlapping(plist, genesize):
     #plist of tuples (prom, type)
     return reduce(lambda indxlst, indx:
-                  indxlst + [indx] if indx[0]-indxlst[-1][0] >= 32 + genesize + 64 else indxlst,
+                  indxlst + [indx] if indx[0]-indxlst[-1][0] >=  genesize + 32 + 64 else indxlst,
                   plist[1:],
                   plist[:1])
 
@@ -54,11 +58,11 @@ def buildpromlist(genome, excite_offset, genesize,
                   promoter, productprom, **kwargs):
     plist1 = _get_all(promoter,genome, excite_offset, genesize)
     plist2 = _get_all(productprom,genome, excite_offset, genesize)
-    alltogether = zip(plist1, [0]*len(plist1)) + zip(plist2, [1]*len(plist2))
+    alltogether = zip(plist1, [TF]*len(plist1)) + zip(plist2, [PR]*len(plist2))
     alltogether.sort(key=lambda x: x[0])
     alltogether = _filteroverlapping(alltogether, genesize)
-    return ([i[0] for i in alltogether if i[1] == 0],
-            [i[0] for i in alltogether if i[1] == 1])
+    return ([i[0] for i in alltogether if i[1] == TF],
+            [i[0] for i in alltogether if i[1] == PR])
 
 def build_customproducts(signatures = INPUT_SIGNATURES):
     products = []
@@ -135,14 +139,12 @@ class ARNetwork(arn.ARNetwork):
         self.proteins = productsfun( gcode, self.promlist)
 
         self.effectors=[]
-        #self.effectorproms = promfun(gcode, promoter='11111111')
         if self.effectorproms:
             #print 'EFFECTORS:', self.effectorproms
             self.effectors = productsfun(gcode,self.effectorproms)
 
         self.receptors= build_customproducts()
         self.receptorproms = [r[0] for r in self.receptors]
-        #self.receptorproms = promfun(gcode, promoter='11111111')
         #if self.receptorproms:
             #print 'RECEPTORS:', self.receptorproms
             #self.receptors = productsfun(gcode,self.receptorproms)
@@ -152,10 +154,10 @@ class ARNetwork(arn.ARNetwork):
 
         prob = kwargs['problem']
         self.numtf = len(self.proteins)
-        if prob.nout == 1:
-                self.numeff = len(self.effectors)
-        else:
-                self.numeff = min(len(self.effectors),prob.nout)
+        #if prob.nout == 1:
+        self.numeff = len(self.effectors)
+        #else:
+         #       self.numeff = min(len(self.effectors),prob.nout)
 
         self.effectorproms = self.effectorproms[:self.numeff]
         self.effectors = self.effectors[:self.numeff]
