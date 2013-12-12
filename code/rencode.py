@@ -34,15 +34,6 @@ def regressionfun(mapped, node_inputs, inputs ):
         return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
                       node_inputs)
 
-def mergefun(mapped, node_inputs, inputs):
-        if not node_inputs:
-                return mapped
-        result = mapped + '('
-        if node_inputs:
-                result += reduce(lambda m, n: m + ',' + n, node_inputs)
-        result += ')'
-        return result
-
 def nnlikefun(mapped, node_inputs, inputs):
         mainmod = __import__('__main__')
         if not node_inputs:
@@ -58,6 +49,16 @@ def nnlikefun(mapped, node_inputs, inputs):
         #print mapped, node_inputs
         return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
                       node_inputs)
+
+
+def mergefun(mapped, node_inputs, inputs):
+        if not node_inputs:
+            return mapped
+        else:
+            result = mapped + '('
+            result += reduce(lambda m, n: m + ',' + n, node_inputs)
+            result += ')'
+            return result
 
 def defaultnodemap(signature, mappingset):
         if len(mappingset) < 2:
@@ -86,12 +87,12 @@ def evaluatecircuit(circuit, circuitmap, resultdict, *inputs,**kwargs):
     if nout == 1:
         return result
     else:
-        results = tuple()
+        results = list()
         for i in range(nout):
             if len(circuit) > i:
-                results += (resultdict[circuit[i][0]],)
+                results.append(resultdict[circuit[i][0]])
             else:
-                results += (0,)
+                results.append(0)
         return results
 
 def buildcircuit(agent, problem, **kwargs):
@@ -246,19 +247,27 @@ class ReNCoDeProb(Problem):
 
 #callable phenotype
 class P:
-    def __init__(self, arnet, circuit, problem, skeleton = nnlikefun):
+    def __init__(self, arnet, circuit, problem, skeleton = regressionfun):
         self.geno = arnet
         self.circuit = circuit
         self.problem = problem
         #memory (disabled by default)
         self.memory = None
         self.funskel = skeleton
+        if not problem.feedback:
+            self._str = compile(evaluatecircuit(self.circuit, mergefun, self.memory, *problem.terms),
+                                '<string>',
+                                'eval')
 
     def getcircuit(self, *args):
         return self.circuit
 
     def __call__(self, *inputs):
-        return evaluatecircuit(self.circuit, self.funskel, self.memory, *inputs)
+        if not self.problem.feedback:
+            return eval(self._str,globals(),{'inputs':inputs})
+        else:
+            return evaluatecircuit(self.circuit,self.funskel , self.memory,
+                                   *inputs, nout = self.problem.nout)
 
     def __len__(self):
         return len(self.circuit)
