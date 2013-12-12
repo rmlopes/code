@@ -37,7 +37,7 @@ def evaluate(pheno, nbits = 3, **kwargs):
 		for i in list(t.bin[:]):
                     result = evaluatecircuit(circuit, regressionfun,
                                              resultdict, i)
-                if int(result) == int(t.count(1)%2):
+                if (not bool(result)) == int(t.count(1)%2):
 			ok += 1
 
         return  pow(2,nbits) - ok
