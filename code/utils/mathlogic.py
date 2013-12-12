@@ -2,16 +2,28 @@ from math import log,exp,tan,tanh,sqrt,cos,sin,cosh,sinh
 import operator
 
 #### MATH ###
-def add_(x1 = 1.0, x2 = 0):
-    return operator.add(x1,x2)
+def add_(*args):
+    return reduce(lambda x,y: operator.add(x,y), args)
 
-def sub_(x1 = 1.0, x2 = 0):
-    return operator.sub(x1,x2)
+def sub_(*args):
+    return reduce(lambda x,y: operator.sub(x,y), args)
 
-def mul_(x1 = 1, x2 = 1):
-    return operator.mul(x1,x2)
+def mul_(*args):
+    return reduce(lambda x,y: operator.mul(x,y), args)
 
-def div_(x = 1, y = 1):
+def div_(*args):
+    return reduce(lambda x,y: div__(x,y), args)
+
+#def add__(x1 = 1.0, x2 = 0):
+#    return operator.add(x1,x2)
+
+#def sub__(x1 = 1.0, x2 = 0):
+#    return operator.sub(x1,x2)
+
+#def mul__(x1 = 1, x2 = 1):
+#    return operator.mul(x1,x2)
+
+def div__(x = 1, y = 1):
     if(y==0): return 1.0
     try:
         return float(x) / y
@@ -122,6 +134,18 @@ def symmetric(*args):
     return (1.0 - x) if x > 0 else (1.0 + x)
 
 ### LOGIC ###
+def nand(*args):
+    return reduce(lambda x,y: not(and_(x,y)), args)
+
+def and_(*args):
+    return reduce(lambda x,y: x and y, args)
+
+def or_(*args):
+    return reduce(lambda x,y: x or y, args)
+
+def nor(*args):
+    return reduce(lambda x,y: not(or_(x,y)), args)
+'''
 def nand(in1, in2 = 1):
     result = not(and_(in1, in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
@@ -141,7 +165,7 @@ def or_(in1, in2 = 0):
     result = (int(in1) or int(in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
     return result
-
+'''
 
 ### CLASSIFICATION ###
 
