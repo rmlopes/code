@@ -82,10 +82,7 @@ def generatechromo_rnd( genomesize, mutratedm, genesize, promoter,
     log.debug('Creating random agent.')
     valid = False
     while not 32 > valid >= 4:
-        genome = BitStream(float=random.random(),length=64)
-        while len(genome)<genomesize:
-            genome += BitStream(float=random.random(),length=64)
-
+        genome = BitStream(int=random.randint(0,2**(genomesize-1)), length=genomesize)
         promlist = buildpromlist(genome, excite_offset,
                                  genesize, promoter, overlapgenes)
         valid = len(promlist)
@@ -146,14 +143,6 @@ def getbindings(bindtype, proteins, match_threshold,**kwargs):
 def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
     time = 1
     while time <= simtime:
-        #if time > 1500:# and time % 300 ==0 :
-         #       for i in range(len(ccs)):
-          #              if proteins[i][0] == 4498:
-           #                     ccs[i] =  .1
-        #if time > 3500:# and time % 100 ==0 :
-         #       for i in range(len(ccs)):
-          #              if proteins[i][0] == 2555:
-           #                     ccs[i] =  .1
         _update(arnet.proteins,arnet.ccs,arnet.eweights,
                 arnet.iweights,delta)
         if(not(silentmode) and
@@ -167,8 +156,6 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
         displayARNresults(proteins, cchistory,simstep)
 
     return arnet.ccs
-    #for i in range(len(proteins)):
-        #proteins[i].append(ccs[i])
 
 
 def _update(proteins, ccs, exciteweights, inhibitweights,delta):
@@ -224,9 +211,6 @@ class ARNetwork:
         self.promlist = promfun(gcode)
         self.proteins = productsfun( gcode, self.promlist)
         self.excite_offset = config.getint('default','excite_offset')
-        #self.proteins = filter(lambda x: x[0] != 7912 and x[0] != 6651,
-        #                       self.proteins)
-
         pbindfun = bindparams(config, getbindings)
         weightsfun = bindparams(config, _getweights)
         nump = len(self.proteins)
@@ -268,7 +252,6 @@ class ARNetwork:
             self.simfun(self)
             for i in range(len(self.proteins)):
                 self.proteins[i][-1] = self.ccs[i]
-            #print [c[5] for c in self.proteins]
 
     def stepsimulate(self, proteins, ccs):
          _updatenonorm(proteins, ccs, self.eweights, self.iweights, self.delta)
