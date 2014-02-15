@@ -23,7 +23,7 @@ def evaluateant(agent, **kwargs):
         agent.funskel = mergefun
         if len(agent) < 3:
                 return 90
-        routine = agent()
+        routine = agent._str
         log.debug(routine)
         #if len(routine) < 5000:
         ant.runstring(routine,True)
@@ -33,7 +33,7 @@ def evaluateant(agent, **kwargs):
 
 
 if __name__ == '__main__':
-        random.seed(1234*int(os.getenv('SGE_TASK_ID')))
+        #random.seed(1234*int(os.getenv('SGE_TASK_ID')))
         p = SantaFeTrail(evaluateant)
         cfg = loadconfig(parsecmd())
         edw = EvoDevoWorkbench(cfg,p)
