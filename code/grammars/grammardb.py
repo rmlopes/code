@@ -82,17 +82,14 @@ _fixed_grammar_b = { 'expr': [['var', 'expr2'],
                      'var': [['inputs[0]'],
                              ['1.0']]}
 
-ant_grammar = { 'code': [['line'],
+_ant_grammar = { 'code': [['line'],
                          ['line','code']],
                 'line': [['op'],
                          ['condition']],
-                'line2': [['op','line2'],
-                          ['condition','line2'],
-                          ['op','']],
-                'condition': [['if ant.sense_food():\n{\n','line2', '\n}\nelse:\n{\n' , 'line2','\n}\n']],
-                'op': [['ant.turn_left;\n'],
-                       ['ant.turn_right;\n'],
-                       ['ant.move_forward;\n']]}
+                'condition': [['if ant.sense_food():{:','line', ':}else:{:' , 'line',':}']],
+                'op': [['ant.turn_left()\n'],
+                       ['ant.turn_right()\n'],
+                       ['ant.move_forward()\n']]}
 
 _artificial_ant = { 'code': [['ant.if_food_ahead','(','code',',','code',')'],
 			     ['prog2','(','code',',','code',')'],
