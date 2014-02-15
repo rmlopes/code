@@ -14,3 +14,8 @@ if not os.getenv('JOB_NAME'):
     os.environ['JOB_NAME'] = __name__
 if not os.getenv('SGE_TASK_ID'):
     os.environ['SGE_TASK_ID'] = '0'
+
+notice = "CoDe  Copyright (C) 2014 Rui L. Lopes\n" + \
+         "This program comes with ABSOLUTELY NO WARRANTY.\n"
+
+print notice
