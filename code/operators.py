@@ -1,6 +1,7 @@
 import random
 from functools import partial
 from bitstring import BitStream
+from bitarray import *
 #from utils import *
 import logging
 
@@ -10,23 +11,28 @@ def transposon(code, *args, **kwargs):
     tsize = int(args[0])
     copypos = random.randint(1, len(code)-tsize)
     transp = code[copypos:copypos+tsize]
-    try:
-        if kwargs['excise']:
-            del code[copypos:copypos+tsize]
-    except KeyError: pass
     insertpos = random.randint(1, len(code)-tsize)
-    code.insert(transp, insertpos)
-    return code
+    c1 = code[:insertpos]
+    c1 += transp
+    c1 +=code[insertpos:]
+    return c1
 
-movingtransposon = partial(transposon,
-                           excise = True)
+def movingtransposon(code, *args, **kwargs):
+    tsize = int(args[0])
+    copypos = random.randint(1, len(code)-tsize)
+    transp = code[copypos:copypos+tsize]
+    insertpos = random.randint(1, len(code)-tsize)
+    code[insertpos:insertpos+tsize] = transp
+    return code
 
 def junk(code, *args, **kwargs):
     tsize = int(args[0])
-    instream = BitStream(bin='0b'+'0'*tsize)
+    instream = bitarray('0'*tsize)
     insertpos = random.randint(1, len(code)-tsize)
-    code.insert(instream,insertpos)
-    return code
+    c = code[:insertpos]
+    c += instream
+    c += code[insertpos:]
+    return c
 
 def delete(code, *args, **kwargs):
     tsize = int(args[0])
@@ -94,15 +100,14 @@ def twopointgene_xover(p1,p2,*args):
     o2 = BitStream(bin=(code2[:realcut2[0]]+code1[realcut1[0]:realcut1[1]]+code2[realcut2[1]:]).bin)
     return o1, o2
 
-#FIXME: this operator results in a drastic reduction of genome size
-# leading to bad evolution
+
 def unigene_xover(p1, p2, *args):
     code1 = p1.genotype.code
     code2 = p2.genotype.code
     l = min(len(p1.genotype.promlist),len(p2.genotype.promlist))
     s = random.randint(0, 2**l - 1)
     bitmask = BitStream(uint=s,length=l)
-    #print bitmask.bin
+
     o1 = code1.bin[:p1.genotype.promlist[0]-88]
     o2 = code2.bin[:p2.genotype.promlist[0]-88]
     for i in range(len(bitmask.bin)):
@@ -124,7 +129,7 @@ def unigene_xover(p1, p2, *args):
 def genecopy(code, *args, **kwargs):
     arnet = kwargs['arnet']
     choice = random.choice(arnet.promlist)
-    #FIXME
+    #TODO: remove hard coded constants
     transp = code[choice-88:choice+168]
     #always at the end because it is indifferent
     code.append(transp)
@@ -133,7 +138,7 @@ def genecopy(code, *args, **kwargs):
 def genedelete(code, *args, **kwargs):
     arnet = kwargs['arnet']
     choice = random.choice(arnet.promlist)
-    #FIXME
+    #TODO
     del code[choice-88:choice+168]
     return code
 
@@ -148,14 +153,17 @@ if __name__ == '__main__':
     log.addHandler(ch)
     p = ReNCoDeProb(None)
     #test inner variation operators
-    a = BitStream('0b' + '00011100011100011100')
-    print a.bin
-    transposon(a, 5)
-    print a.bin
-    junk(a, 5)
-    print a.bin
-    delete(a, 15)
-    print a.bin
+    a = bitarray('00011100011100011100')
+    print a.to01()
+    a1 = transposon(bitarray(a), 5)
+    print a1.to01()
+    a2 = junk(bitarray(a), 5)
+    print a2.to01()
+    a3 = delete(bitarray(a), 15)
+    print a3.to01()
+    a4 = movingtransposon(bitarray(a), 5)
+    print a4.to01()
+    exit(0)
 
     #test genecopy and delete
     a = DMAgent(arncfg, p)

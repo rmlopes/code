@@ -59,7 +59,7 @@ class Agent:
 
         def print_(self): return str(self)
 
-#Problem base for htis module
+#Problem base for this module
 class Problem:
         __metaclass__ = ABCMeta
         @abstractproperty
@@ -72,9 +72,7 @@ class Problem:
         def arity(self): pass
 
         def __init__(self, evaluate):
-                #self.nodemap_ = nodemap
                 self.eval_ = evaluate
-                #self.print_ = partial(print_, labels = self.labels)
                 self.arity = dict(zip(self.funs,[0]*len(self.funs)))
 
 
@@ -117,9 +115,6 @@ class EvoDevoWorkbench:
                     self.xover_ = getattr(mainmod,self.xover_)
                     self.xrate = config.getfloat('default','xrate')
 
-                #arncfg = config.get('default','arnconf')
-                #self.arnconfig = ConfigParser.ConfigParser()
-                #self.arnconfig.readfp(open(arncfg))
                 aclass = config.get('default','agent').split('.')
                 mod = aclass[0] + "." + aclass[1]
                 self.device = __import__(mod,fromlist=aclass[2])
@@ -173,7 +168,7 @@ class EvoDevoWorkbench:
                     self.gui.pop = self.population
                     self.gui.unpause()
                     self.parents = []
-                    for i in self.gui.selected: #[-self.parentpsize]:
+                    for i in self.gui.selected:
                         self.population[i].fitness -= 1
                     if not self.gui._running:
                         self.population[self.gui.selected[0]].fitness = 0
@@ -194,12 +189,9 @@ class EvoDevoWorkbench:
                 del self.parents[self.parentpsize:]
                 log.info('Generating next population...')
 
-                #TODO: clean this code
                 offsprings = []
                 if self.xover_:
-                    #while len(offsprings)/float(self.popsize)\
-                    #< self.xrate:
-                    #tournament FIXME: parameterise this
+                    #tournament TODO: parameterise this
                     for i in range(self.popsize//2):
                         if random.random() < self.xrate:
                             players1 = random.sample(self.parents,3)
@@ -207,7 +199,6 @@ class EvoDevoWorkbench:
                             players2 = random.sample(self.parents,3)
                             players2.sort(key=lambda a: a.fitness)
                             breeders = [players1[0], players2[0]]
-                            #breeders = random.sample(self.parents,2)
                             offsprings.extend(self._reproduct_agents(*breeders))
                     log.debug('Created %i offsprings by xover.'
                               %(len(offsprings),))
@@ -265,14 +256,13 @@ class EvoDevoWorkbench:
                         "non-matching genomes; using %s\n%s\n%s" % (op_.__name__,opcode,mut_opcode)
                 mutmask = mut_opcode ^ opcode
                 idxmut = filter(lambda l: l[0] == '1',
-                                zip(mutmask.bin, range(len(mutmask.bin))))
+                                zip(mutmask, range(len(mutmask))))
                 totalmut = len(idxmut)
                 if agent.phenotype == mutagent.phenotype:
                     neutralmut = totalmut
                 else:
-                    #print idxmut
-                    #print agent.genotype.promlist
-                    #FIXME: constants
+                    #TODO: remove hard coded constants
+                    #To use only with ARN genomes
                     neutralmut = 0
                     try:
                         promlist = agent.genotype.promlist + \
@@ -316,7 +306,6 @@ class EvoDevoWorkbench:
                         log.debug(self.parents[0].fitness)
                         log.debug(self.best.fitness)
                         if self.parents[0].fitness < self.best.fitness:
-                                #self.best = copy.deepcopy(self.parents[0])
                                 self.best = self.parents[0]
                                 if self.basicadf:
                                         register_adf(self.adfcount,
@@ -358,7 +347,7 @@ class EvoDevoWorkbench:
                 if self.mutrate < .5*self.orig_mutrate:
                         self.mutrate *= 2
 
-                #print 'mutrate = %f' % (self.mutrate,)
+                log.debug('mutrate = %f' % (self.mutrate,))
 
                 self.mutate_ = partial(bitflipmutation,
                                        mutrate = self.mutrate)

@@ -17,6 +17,7 @@ from arn import bindparams, generatechromo, \
     buildproducts, getbindings, _getweights, _getSignalArray
 from extendedarn import displayARNresults
 import copy
+from bitarray import *
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +25,7 @@ log = logging.getLogger(__name__)
 TF = 0
 #products aux index
 PR = 1
-
+'''
 INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('1'*16 + '0'*16)),
                     BitStream(bin=('0'*16 + '1'*16)),
@@ -37,13 +38,25 @@ INPUT_SIGNATURES = [BitStream(bin=('0'*32)),
                     BitStream(bin=('11110000'*4)),
                     BitStream(bin=('0000000011111111'*2)),
                     BitStream(bin=('1111111100000000'*2))]
-
+'''
+INPUT_SIGNATURES = [32*bitarray('0'),
+                    16*bitarray('1') + 16*bitarray('0'),
+                    16*bitarray('0') + 16*bitarray('1'),
+                    32*bitarray('1'),
+                    8*bitarray('0111'),
+                    8*bitarray('0011'),
+                    8*bitarray('0001'),
+                    8*bitarray('0101'),
+                    4*bitarray('00001111'),
+                    4*bitarray('11110000'),
+                    2*bitarray('0000000011111111'),
+                    2*bitarray('1111111100000000')]
 
 def _get_all(promoter, genome, excite_offset,genesize):
     promsize = len(promoter)
-    plist = genome.findall(BitStream(bin=promoter))
+    plist = genome.search(bitarray(promoter))
     plist = filter( lambda index:
-                     int(excite_offset) <= index <  (genome.length-(int(genesize)+promsize )),
+                     int(excite_offset) <= index <  (genome.length()-(int(genesize)+promsize )),
                      plist)
     return plist
 
@@ -54,10 +67,13 @@ def _filteroverlapping(plist, genesize):
                   plist[1:],
                   plist[:1])
 
+def _filteroverlaptf(plist, efflist):
+    return filter(lambda x: not any([(e-256 < x < e + 256) for e in efflist]),plist)
+
 def buildpromlist(genome, excite_offset, genesize,
                   promoter, productprom, **kwargs):
     plist1 = _get_all(promoter,genome, excite_offset, genesize)
-    plist2 = _get_all(productprom,genome, excite_offset, genesize)
+    plist2 = _get_all(productprom,genome, excite_offset, genesize)#[:kwargs['nout']]
     alltogether = zip(plist1, [TF]*len(plist1)) + zip(plist2, [PR]*len(plist2))
     alltogether.sort(key=lambda x: x[0])
     alltogether = _filteroverlapping(alltogether, genesize)
@@ -74,14 +90,12 @@ def build_customproducts(signatures = INPUT_SIGNATURES):
 
 
 def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
-    #s = clock()
     time = 1
     nump = arnet.numtf
     numsamples = 1
     numrec = arnet.numrec
     numeff = arnet.numeff
 
-    #print kwargs['inputs']
     while time <= simtime:
         for i in range(numrec):
             arnet.ccs[nump+i] = kwargs['inputs'][i]
@@ -89,15 +103,14 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
         _update(arnet.proteins,arnet.ccs,arnet.eweights,arnet.iweights,
                 delta, numtf = nump)
         #normalize ccs, ignoring effectors
-        #print arnet.ccs[:nump]
         totparcels = arnet.ccs[:nump+numrec].tolist()
         #receptors ccs is not modified here
         arnet.ccs[:nump] /= sum(totparcels)
         #normalize outputs
         #FIXME: should this be done?
         for i in range(numeff):
-        #    if arnet.ccs[-1-i] > 1.0:
-        #        arnet.ccs[-1-i] = 1.0
+            if arnet.ccs[-1-i] > 1.0:
+                arnet.ccs[-1-i] = 1.0
             if arnet.ccs[-1-i] < .0:
                 arnet.ccs[-1-i] = .0
         if numeff > 1:
@@ -107,57 +120,51 @@ def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
             log.debug('TIME: '+ str(time))
             arnet.updatehistory()
         time+=simstep
-
-    #print 'Elapsed time: %f sec.' % (clock()-s,)
     return arnet
 
 
 def _update(proteins, ccs, exciteweights, inhibitweights,delta,**kwargs):
-    #print ccs.shape
     deltas = (_getSignalArray(ccs[:len(exciteweights)],exciteweights) -
               _getSignalArray(ccs[:len(inhibitweights)],inhibitweights))
-    #print deltas.shape
-    deltas *= delta
 
+    deltas *= delta
     #NOTE: previous output concentration shall not be accounted for
     numreg = exciteweights.shape[0]
     #NOTE: not touching receptors ccs
     deltas[:kwargs['numtf']] *= ccs[:kwargs['numtf']]
     ccs[:kwargs['numtf']] += deltas[:kwargs['numtf']]
     ccs[numreg:] += deltas[numreg:]
-    #ccs/=total
 
 class ARNetwork(arn.ARNetwork):
     def __init__(self, gcode, config, **kwargs):
         self.code = gcode
         self.simtime = config.getint('default','simtime')
+        prob = kwargs['problem']
 
         promfun = bindparams(config, buildpromlist)
         productsfun = bindparams(config, buildproducts)
-        self.promlist,self.effectorproms = promfun(gcode,
-                                                   productprom='11111111')
+        #TODO: add nout to the parameters file or bring the problem instance here?
+        self.promlist,self.effectorproms = \
+                        promfun(gcode,
+                                productprom='11111111',
+                                nout = prob.nout)
         self.proteins = productsfun( gcode, self.promlist)
 
         self.effectors=[]
         if self.effectorproms:
-            #print 'EFFECTORS:', self.effectorproms
             self.effectors = productsfun(gcode,self.effectorproms)
 
         self.receptors= build_customproducts()
         self.receptorproms = [r[0] for r in self.receptors]
-        #if self.receptorproms:
-            #print 'RECEPTORS:', self.receptorproms
-            #self.receptors = productsfun(gcode,self.receptorproms)
 
         pbindfun = bindparams(config, getbindings)
         weightsfun = bindparams(config, _getweights)
 
-        prob = kwargs['problem']
         self.numtf = len(self.proteins)
-        #if prob.nout == 1:
-        self.numeff = len(self.effectors)
-        #else:
-         #       self.numeff = min(len(self.effectors),prob.nout)
+        if prob.nout == 1:
+            self.numeff = len(self.effectors)
+        else:
+            self.numeff = min(len(self.effectors),prob.nout)
 
         self.effectorproms = self.effectorproms[:self.numeff]
         self.effectors = self.effectors[:self.numeff]
@@ -177,8 +184,8 @@ class ARNetwork(arn.ARNetwork):
         self.simfun = bindparams(config,iterate)
 
         self.delta = config.getfloat('default','delta')
-        #log.debug(self.snapshot())
-        #self.output_idx = 0
+        log.debug(self.snapshot())
+        self.output_idx = 0
 
     def _initializebindings(self, pbindfun):
         self.ebindings = pbindfun(0, self.proteins  + self.receptors +
@@ -189,15 +196,11 @@ class ARNetwork(arn.ARNetwork):
         #effectors do not regulate
         if self.effectors:
                 self.ebindings = self.ebindings[:self.numtf+self.numrec,:]
-                #print 'ebinds: ', self.ebindings.shape
                 self.ibindings = self.ibindings[:self.numtf+self.numrec,:]
-                #print 'ibinds: ', self.ibindings.shape
 
     def _initializeweights(self, weightsfun):
         self.eweights = weightsfun(self.ebindings)
-        #print 'ebinds: ', self.eweights.shape
         self.iweights = weightsfun(self.ibindings)
-        #print 'ebinds: ', self.iweights.shape
 
     def _initializehistory(self):
         self.cchistory=nparray(self.ccs[:self.numtf])
@@ -222,17 +225,7 @@ class ARNetwork(arn.ARNetwork):
             #deepcopy, even if it is a list of floats would only
             #shallow copy, resulting in inconsistency
             self.ccs = copy.deepcopy(cc_state)
-            #print 'reseting state to: ', cc_state
         self._initializehistory()
-        #FIXME: pickled ccs are not correct
-        #print cc_state
-        #self.updatehistory()
-        #self.nstepsim(self.simtime,*[.0,.0,.0,.0])
-        #print self.ccs
-        #if len(cc_state) == 0:
-
-        #else:
-           # self.ccs = nparray(cc_state[:])
 
     def __len__(self):
         return len(self.proteins)+len(self.effectors)
@@ -243,9 +236,6 @@ class ARNetwork(arn.ARNetwork):
     def simulate(self, *inputs):
         if not inputs:
             inputs = [.0]*self.numrec
-        #print self.numtf
-        #print self.numrec
-        #print str(len(self.ccs) - (self.numtf+self.numrec))
         if self.simtime > 0:
             self.simfun(self,inputs = inputs)
             for i in range(self.numtf):

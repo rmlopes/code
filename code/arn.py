@@ -53,7 +53,7 @@ def neutralshare(arnet):
             break
         if proms[i] + 168 < proms[i+1] - 88:
             neutrals += (proms[i+1] - 88) - (proms[i] + 168)
-    neutrals += len(arnet.code.bin) - (proms[-1]+168)
+    neutrals += len(arnet.code) - (proms[-1]+168)
     return float(neutrals) / len(arnet.code.bin)
 
 def generatechromo(initdm, mutratedm, genesize, promoter,
@@ -64,13 +64,12 @@ def generatechromo(initdm, mutratedm, genesize, promoter,
     '''
     log.debug('Creating DM agent.')
     valid = False
-    while not 32 > valid >= 4:
-        genome = BitStream(float=random.random(),length=32);
+    while True:
+        genome = bitarray(getrndstr(32))
         for i in range(0,initdm):
             genome = dm_event(genome, mutratedm)
-        promlist = buildpromlist(genome, excite_offset, genesize,
-                                 promoter, overlapgenes)
-        valid = len(promlist)
+        if genome.search(bitarray(promoter)):
+            break
     return genome
 
 def generatechromo_rnd( genomesize, mutratedm, genesize, promoter,
@@ -81,11 +80,9 @@ def generatechromo_rnd( genomesize, mutratedm, genesize, promoter,
     '''
     log.debug('Creating random agent.')
     valid = False
-    while not 32 > valid >= 4:
-        genome = BitStream(int=random.randint(0,2**(genomesize-1)), length=genomesize)
-        promlist = buildpromlist(genome, excite_offset,
-                                 genesize, promoter, overlapgenes)
-        valid = len(promlist)
+    genome = bitarray(getrndstr(genomesize))
+    while not genome.search(bitarray(promoter)):
+        genome = bitarray(getrndstr(genomesize))
     return genome
 
 def displayARNresults(proteins, ccs, step=1):
@@ -103,10 +100,10 @@ def displayARNresults(proteins, ccs, step=1):
 
 def buildpromlist(genome, excite_offset, genesize, promoter,
                   overlapgenes, **kwargs):
-    gene_index = genome.findall(BitStream(bin=promoter))
+    gene_index = genome.search(bitarray(promoter))
     promsize = len(promoter)
     promlist = filter( lambda index:
-                       int(excite_offset) <= index <  (genome.length-(int(genesize)+promsize )),
+                       int(excite_offset) <= index <  (genome.length()-(int(genesize)+promsize )),
                        gene_index)
     genegap = 32 + genesize + 64
     if overlapgenes:
@@ -127,7 +124,7 @@ def buildproducts(genome, promlist, excite_offset, promoter,
      proteins = list()
      for pidx in promlist:
          proteins.append(_getprotein(pidx,
-                                     genome[pidx-excite_offset:pidx+genesize+len(promoter)],
+                                     bitarray(genome[pidx-excite_offset:pidx+genesize+len(promoter)]),
                                      bindingsize,
                                      genesize,
                                      proteinsize))
@@ -178,9 +175,8 @@ def _getSignalArray(ccs, weightstable):
     return 1.0/len(ccs) * np.dot(ccs,weightstable)
 
 def _getprotein(idx, code, bind_size, gene_size, protein_size):
-    signature = BitStream(bin=
-                        applymajority(code[bind_size*3:bind_size*3+gene_size],
-                                      protein_size))
+    signature = bitarray(applymajority(code[bind_size*3:bind_size*3+gene_size],
+                              protein_size))
     #EXTENDED version - Weak linkage (needs double size gene/proteins)
     #p = [code[:self.bind_size],
      #       code[self.bind_size:self.bind_size*2],
@@ -232,10 +228,7 @@ class ARNetwork:
 
     def _initializeweights(self, weightsfun):
         self.eweights = weightsfun(self.ebindings)
-        #print 'ebinds: ', self.eweights.shape
         self.iweights = weightsfun(self.ibindings)
-        #print 'ebinds: ', self.iweights.shape
-
 
     def _initializehistory(self):
         self.cchistory=nparray(self.ccs)
