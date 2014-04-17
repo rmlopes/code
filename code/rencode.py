@@ -26,13 +26,18 @@ def printdotcircuit(circuit, labels=None):
 
 #TODO: remove! behavior is identical to nnlikefun
 def regressionfun(mapped, node_inputs, inputs ):
-        if not node_inputs:
-                return eval(mapped)
-        mainmod = __import__('__main__')
-        if len(node_inputs) == 1:
-                return getattr(mainmod, mapped)(node_inputs[0])
-        return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
-                      node_inputs)
+    if not node_inputs:
+        return eval(mapped)
+    mainmod = __import__('__main__')
+    if mapped in ['if_']:
+        return getattr(mainmod, mapped)(*node_inputs)
+        #print r
+    #    return r
+    #else:
+    if len(node_inputs) == 1:
+        return getattr(mainmod, mapped)(node_inputs[0])
+    return reduce(lambda m,n: getattr(mainmod, mapped)(m,n),
+                  node_inputs)
 
 def nnlikefun(mapped, node_inputs, inputs):
         mainmod = __import__('__main__')
@@ -63,9 +68,9 @@ def mergefun(mapped, node_inputs, inputs):
 def defaultnodemap(signature, mappingset):
         if len(mappingset) < 2:
                 return mappingset[0]
-        index = BitStream(bin=applymajority(
-                        signature,
-                        int(math.ceil(math.log(len(mappingset),2)))))
+        index = BitArray(bin=applymajority(
+                             signature,
+                             int(math.ceil(math.log(len(mappingset),2)))))
         intindex = index.uint
         if intindex >= len(mappingset):
                 intindex -= len(mappingset)
@@ -102,7 +107,6 @@ def buildcircuit(agent, problem, **kwargs):
                 return []
         #arn.simulate()
         #orderedps = sorted(arn.proteins, key = lambda x: x[-1], reverse=True)
-        #print [(p[0],p[-1]) for p in orderedps]
 
         graph = arn.ebindings - arn.ibindings
         cleanpairs(graph)
@@ -117,12 +121,7 @@ def buildcircuit(agent, problem, **kwargs):
         pdict = dict(zip(arn.promlist,arn.proteins))
         recursivebuild(circuit, problem, pdict, dict(promlist),
                       graph, [promlist[0][0]], [], [])
-        #print circuit
 
-        #if orderedps[0][0] == circuit[0][0]:
-         #   print "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
-        #else:
-         #   print "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
         return circuit
 
 def recursivebuild(circuit, problem, proteindict, inputdict, graph,
@@ -147,8 +146,8 @@ def recursivebuild(circuit, problem, proteindict, inputdict, graph,
         if inputs:
                 fun = problem.nodemap_(pnext[4],problem.funs)
                 ar = problem.arity[fun]
-                if ar > 0:
-                        inputs = inputs[:ar]
+                if ar > 0 and len(inputs) > ar:
+                        del inputs[ar:]
         else:
                 fun = problem.nodemap_(pnext[4],problem.terms)
 
@@ -234,13 +233,14 @@ def printcircuit(circuit):
 
 ### Problem base to use with ReNCoDe
 class ReNCoDeProb(Problem):
-        #read fun set from config file??
+        #TODO: read fun set from config file
         funs = [ 'add_', 'sub_', 'mul_', 'div_']
-        terms = [ 'inputs[0]' ]#,'1.0' ]
+        terms = [ 'inputs[0]' ]
         labels = {'add_':'+', 'sub_':'-', 'mul_':'*', 'div_':'/',
                   'inputs[0]':'x', 'inputs[1]':'1.0'}
         arity = {}#{'add_':0, 'sub_':0, 'mul_':0, 'div_':0}
         feedback = False
+        nout=1
         def __init__(self, evaluate, nodemap = defaultnodemap):
                 Problem.__init__(self, evaluate)
                 self.nodemap_ = nodemap
@@ -263,11 +263,8 @@ class P:
         return self.circuit
 
     def __call__(self, *inputs):
-        if not self.problem.feedback:
-            return eval(self._str,globals(),{'inputs':inputs})
-        else:
-            return evaluatecircuit(self.circuit,self.funskel , self.memory,
-                                   *inputs, nout = self.problem.nout)
+        return evaluatecircuit(self.circuit,self.funskel , self.memory,
+                               *inputs, nout = self.problem.nout)
 
     def __len__(self):
         return len(self.circuit)
@@ -283,7 +280,6 @@ class ReNCoDeAgent(Agent):
         genotype = None
         phenotype = None
         fitness = None
-        #print_ = None
         def __init__(self, config, problem, gcode = None, parent = None):
                 Agent.__init__(self, parent)
                 generator = arn.bindparams(config, self.generate)
