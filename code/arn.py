@@ -54,7 +54,7 @@ def neutralshare(arnet):
         if proms[i] + 168 < proms[i+1] - 88:
             neutrals += (proms[i+1] - 88) - (proms[i] + 168)
     neutrals += len(arnet.code) - (proms[-1]+168)
-    return float(neutrals) / len(arnet.code.bin)
+    return float(neutrals) / len(arnet.code)
 
 def generatechromo(initdm, mutratedm, genesize, promoter,
                    excite_offset, overlapgenes,**bindargs):
