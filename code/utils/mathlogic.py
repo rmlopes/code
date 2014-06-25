@@ -134,38 +134,62 @@ def symmetric(*args):
     return (1.0 - x) if x > 0 else (1.0 + x)
 
 ### LOGIC ###
-def nand(*args):
-    return reduce(lambda x,y: not(and_(x,y)), args)
+#def nand(*args):
+#    return reduce(lambda x,y: not(x and y), args)
 
-def and_(*args):
-    return reduce(lambda x,y: x and y, args)
+#def and_(*args):
+#    return reduce(lambda x,y: x and y, args)
+    #print r, args
 
-def or_(*args):
-    return reduce(lambda x,y: x or y, args)
 
-def nor(*args):
-    return reduce(lambda x,y: not(or_(x,y)), args)
-'''
-def nand(in1, in2 = 1):
+#def or_(*args):
+#    return reduce(lambda x,y: x or y, args)
+    #print r,args
+
+#d#ef nor(*args):
+#    return reduce(lambda x,y: not(x or y), args)
+
+def iand(in1, in2 = True):
+    return (not in1) and in2
+
+def xor(in1, in2 = False):
+    if in1 == in2:
+        return 0
+    else: return 1
+
+def nand(in1, in2 = True):
     result = not(and_(in1, in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
     return result
 
-def nor(in1, in2 = 0):
+def nor(in1, in2 = False):
     result = not(or_(in1, in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
     return result
 
-def and_(in1, in2 = 1):
+def and_(in1, in2 = True):
     result = (int(in1) and int(in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
     return result
 
-def or_(in1, in2 = 0):
+def or_(in1, in2 = False):
     result = (int(in1) or int(in2))
     #print 'in1=', in1, ' in2=',in2, ' r=',result
     return result
-'''
+
+def if_(*args):
+    if len(args) == 1:
+        return args[0]
+    elif len(args) == 2:
+        if args[0]:
+            return args[1]
+        else:
+            return not args[1]
+    else:
+        if args[0]:
+            return args[1]
+        else:
+            return args[2]
 
 ### CLASSIFICATION ###
 
