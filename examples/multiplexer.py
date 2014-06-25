@@ -1,24 +1,31 @@
 import sys
 from code.evodevo import *
 from code.operators import *
-from code.rencode2 import *
-from code.rencode import ReNCoDeProb, evaluatecircuit, regressionfun
+#from code.rencode2 import *
+from code.rencode import *
+#ReNCoDeProb, evaluatecircuit, regressionfun
 from code.utils.mathlogic import *
 from code.extendedarn import bindparams, displayARNresults
+from code.utils.config import parsecmd, loadconfig
 
-class BooleanProb(ReNCoDeProb):
+class Multiplexer(ReNCoDeProb):
         labels = {'and_':'AND',
                   'or_':'OR',
                   'nand':'NAND',
                   'nor':'NOR',
                   'inputs[0]':'INP'}
-        funs = [ 'and_', 'or_', 'nand', 'nor','and_','or_','nand','nor']
-        feedback = True
+        funs = [ 'and_', 'or_', 'nand', 'nor','and_','or_','if_','if_']
+        feedback = False
         def __init__(self, nbits, evalf):
+                ReNCoDeProb.__init__(self,evalf)
                 self.ninp = nbits
                 self.nout = 1
                 self.terms = ['inputs[%i]'%(idx,) for idx in range(nbits)]
-                ReNCoDeProb.__init__(self,evalf, printf=printrencode2)
+                self.arity = {'and_': 0,
+                  'or_': 0,
+                  'nand': 0,
+                  'nor': 0,
+                  'if_': 3}
 
 def testmp(phenotype, intinps):
     #FIXME: n = log_2(len(intinps))
@@ -26,9 +33,9 @@ def testmp(phenotype, intinps):
     address = int(math.floor(math.log(n,2)))
     #print address
     ok = 0
-    outidx = phenotype.output_idx
+    #outidx = phenotype.output_idx
     for i in intinps:
-        inputs = BitStream(uint = i, length = n)
+        inputs = BitArray(uint = i, length = n)
         #print inputs.bin
         #normalized = nparray([float(inputs.bin[i])
          #                     for i in range(n)])
@@ -36,21 +43,32 @@ def testmp(phenotype, intinps):
         #phenotype.nstepsim(phenotype.simtime,*normalized)
         #out = (phenotype.effectorhist[outidx][-1] -
         #       phenotype.effectorhist[outidx][-2])
-        try:
-                out = evaluatecircuit(phenotype.getcircuit(outidx),
-                              regressionfun, dict(),
-                              *inputs.bin)
-        except:
-                print phenotype.getcircuit(outidx)
-                print inputs.bin
+        #try:
+                #out = evaluatecircuit(phenotype.getcircuit(outidx),
+                 #             regressionfun, dict(),
+                  #            *inputs.bin)
+        out = phenotype(*inputs.bin)
+        #print type(out)
+        #except:
+         #       print phenotype.getcircuit()
+         #       print inputs.bin
+          #      return 0
         #print 'OUT: ', out
         #out = 0 if out <= 0 else 1
-        index = BitStream(bin=inputs.bin[:address]).uint
+        index = BitArray(bin=inputs.bin[:address]).uint
         #print index, inputs.bin[:address]
         #assert(index == inputs[0])
-        if out == inputs[address+index]:
+        #out2 = True if out else False
+        # The cast to int is necessary to enforce the correctness
+        # of the conversion 0 False, 1 True and vv
+        #if int(out) == int(inputs[address+index]):
             #print out, inputs
-            ok += 1
+            #ok += 1
+        if not int(out) ^ inputs[address+index]:
+                ok += 1
+        #else:
+          #  print out, int(out), inputs[address+index]#inputs[address+index],int(inputs[address+index])
+
     return ok
 
 def evaluate(phenotype, test = False, nbits = 3, **kwargs):
@@ -68,26 +86,28 @@ def evaluate(phenotype, test = False, nbits = 3, **kwargs):
         bestfit = 0
         bestout = 0
         #print 'ORIGINAL: ',orig_state
-        if not test:
-            for eff in range(phenotype.arnet.numeff):
-                phenotype.output_idx = eff
-                ok = testmp(phenotype, intinps)
-                if ok > bestfit:
-                    bestfit = ok
-                    bestout = eff
-                    #print 'best output index is now ',eff
-            phenotype.output_idx = bestout
-        else:
-            print 'output index is ', phenotype.output_idx
-            bestfit = testmp(phenotype, intinps)
+        #if not test:
+            #for eff in range(phenotype.arnet.numeff):
+            #    phenotype.output_idx = eff
+            #ok = testmp(phenotype, intinps)
+            #    if ok > bestfit:
+            #        bestfit = ok
+            #        bestout = eff
+            #        #print 'best output index is now ',eff
+            #phenotype.output_idx = bestout
+        #else:
+            #print 'output index is ', phenotype.output_idx
+            #bestfit = testmp(phenotype, intinps)
+        bestfit =testmp(phenotype, intinps)
         return len(intinps) - bestfit
 
 if __name__ == '__main__':
     #p  = BooleanProb(evaluate)
-    evalf = partial(evaluate, nbits=11)
+    evalf = partial(evaluate, nbits=6)
+    cfg = loadconfig(parsecmd())
     #mapfun = getoutputp0p1)
-    p = BooleanProb(11,evalf)
-    edw = EvoDevoWorkbench(sys.argv[1],p,RndAgent)
+    p = Multiplexer(6,evalf)
+    edw = EvoDevoWorkbench(cfg,p)
     #p.eval_ = bindparams(edw.arnconfig, p.eval_)
     edw.run()
 

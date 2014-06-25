@@ -19,20 +19,20 @@ class BooleanProb(ReNCoDeProb):
         funs = [ 'and_', 'or_', 'nand', 'nor','and_','or_','nand','nor']
         feedback = False
         def __init__(self, nbits, evalf, **kwargs):
-                self.ninp = nbits
-                self.nout = 2
-                self.terms = ['inputs[%i]'%(idx,) for idx in range(nbits)]
+                self.ninp = nbits*2
+                self.nout = nbits*2
+                self.terms = ['inputs[%i]'%(idx,) for idx in range(nbits*2)]
                 ReNCoDeProb.__init__(self,evalf, **kwargs)
 
 def testadder(phenotype, intinps):
-    #FIXME: n = log_2(len(intinps))
-    n = int(math.log(len(intinps),2))
-    address = int(math.floor(math.log(n,2)))
+        #FIXME: n = log_2(len(intinps))
+    n = int(math.log(len(intinps),2))/2
     #print address
     ok = 0
-    #outidx = phenotype.output_idx
     for i in intinps:
-        inputs = BitArray(uint = i, length = n)
+        inputs = BitStream(uint = i, length = n*2)
+        a = inputs[:n]
+        b = inputs[n:]
         #print inputs.bin
         #normalized = nparray([float(inputs.bin[i])
          #                     for i in range(n)])
@@ -40,33 +40,26 @@ def testadder(phenotype, intinps):
         #phenotype.nstepsim(phenotype.simtime,*normalized)
         #out = (phenotype.effectorhist[outidx][-1] -
         #       phenotype.effectorhist[outidx][-2])
-        #try:
-        out = phenotype(*inputs.bin)
-        #print out
-                #evaluatecircuit(phenotype.getcircuit(outidx),
-                #                                     regressionfun,
-                # mergefun,
-                #                                    dict(),
-                #                                   *inputs.bin, nout = 2)
-        #except:
-         #       print phenotype.getcircuit(outidx)
-          #      print inputs.bin
-        #r = BitStream(bin='%i%i'%(int(out[0]),int(out[1])))
-	r = bitarray(out)
-        expected = bitarray(BitArray(uint = inputs.count(1), length = n-1).bin)
-	ok += (expected ^ r).count(1)
+        try:
+                out = list(evaluatecircuit(phenotype.getcircuit(),
+                                      regressionfun, dict(),
+                                      *inputs.bin, nout = 4))
+        except:
+                print phenotype.getcircuit()
+                print inputs.bin
+                return -1
         #print 'OUT: ', out
         #out = 0 if out <= 0 else 1
-        #out = reduce(lambda x,k: x + ('1' if k else '0'), out, '')
-        #result = BitStream(bin=out).uint
+        out = reduce(lambda x,k: x + ('1' if k else '0'), out, '')
+        if a.uint * b.uint == BitStream(bin = out).uint:
+        #result = int(out0) * 2 + int(out1) * 1
         #if result == inputs.count(1):
             #print out, inputs
-        #    ok += 1
+            ok += 1
     return ok
 
-def evaluate(phenotype, test = False, nbits = 3, **kwargs):
-        n = nbits
-        intinps = range(pow(2,n))
+def evaluate(phenotype, test = False, nbits = 2, **kwargs):
+        intinps = range(pow(2,nbits*2))
         if not test:
                 intinps = intinps[:]
         #random.shuffle(intinps)
@@ -79,41 +72,22 @@ def evaluate(phenotype, test = False, nbits = 3, **kwargs):
         bestfit = 0
         bestout = 0
         #print 'ORIGINAL: ',orig_state
-        r = testadder(phenotype, intinps)
-        return r
-        #r = len(intinps) - bestfit
-        #if r == 0:
-        #    return 0
-        #else:
-            #numtf = float(phenotype.arnet.numtf) + 1.0
-        #    numeff = phenotype.arnet.numeff
-        #    if numeff > 1:
-        #        p = 1.0 - 2/float(numeff)#.05 * abs(numeff-2)
-        #    else:
-        #        p = 1.0##
-
-        #    return r + .45*p #(.45 / float(numtf)) + (.45 * p)
+        bestfit = testadder(phenotype, intinps)
+        if bestfit == -1:
+                return 1e6
+        return len(intinps) - bestfit
 
 if __name__ == '__main__':
     #log.setLevel(logging.DEBUG)
-    #random.seed(1234)
+    #random.seed(1234*int(os.getenv('SGE_TASK_ID')))
     #p  = BooleanProb(evaluate)
-    #pr = cProfile.Profile()
-    #pr.enable()
-        #import cProfile, pstats, StringIO
-    evalf = partial(evaluate, nbits=3)
+    evalf = partial(evaluate, nbits=2)
     #mapfun = getoutputp0p1)
     cfg = loadconfig(parsecmd())
-    p = BooleanProb(3,evalf)
+    p = BooleanProb(2,evalf)
     edw = EvoDevoWorkbench(cfg,p)
     #p.eval_ = bindparams(edw.arnconfig, p.eval_)
-    edw.run(terminate = (lambda x,y: x ==0 or y <= 0))
-    #pr.disable()
-    #s = StringIO.StringIO()
-    #sortby = 'cumulative'
-    #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-    #ps.print_stats()
-    #print s.getvalue()
+    edw.run()
 
     #f = open('genome.save','w')
     #f.write(edw.best.phenotype.code.bin)

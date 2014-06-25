@@ -80,6 +80,10 @@ class FilenameParsers:
             f = fn()
             tokens = filename.split('_')
             f.problem =  tokens[0]#.split('-',1)[0]
+            if f.problem == 'fibonacc-b':
+                f.problem = 'fibonacci'
+            elif f.problem == 'squares-rnd':
+                f.problem = 'squares-red'
             #f.op = tokens[0].split('-')[1]
 
             #if f.op == "rnd7F":

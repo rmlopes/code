@@ -38,6 +38,13 @@ def evaluate(circuit, target, inputs, test = False,**kwargs):
 
         targets, outputs = zip(*tytuples)
 
+        const = True
+        for o in outputs[1:]:
+            if o != outputs[0]:
+                const = False
+                break;
+        if const: return 1e6
+
         if not test:
             mse =  sum(abs(np.array(targets)-np.array(outputs)))
         else:
@@ -139,7 +146,8 @@ def wrapevaluate(circuit, target, inputs, device, test = False, **kwargs):
 
 if __name__ == '__main__':
     #log.setLevel(logging.INFO)
-    random.seed(1234*int(os.getenv('SGE_TASK_ID')))
+    #random.seed(1234*int(os.getenv('SGE_TASK_ID')))
+    #random.seed(1234)
     evalfun = partial(evaluate,
                       target=kozapolynomial,
                       inputs=list(drange(-1,1.1,.1)))

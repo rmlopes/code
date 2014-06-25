@@ -87,34 +87,43 @@ ggplot(data=fresults[fresults$Op != 'rnd7F',], aes(x=Rates,fill=OpLength)) +
 ggsave('r1success.pdf')
 }
 
-"
-textable = xtable(factorvars[c(2,4:6,10)],
-                           digits=c(0, 0, 0, 0,0,0),
-				  caption='Summary of the results for the Symbolic Regression experiments.',
-				  label='table:summary-symb')
-print(textable, file = 'summary-symb.tex')
-cat(separator)
-"
+
 
 compare = '--compare' %in% args[]
 if(compare){  
 "COMPARE
  Performs the statistical tests over the number of evaluations of the runs and plots the result in a graphical matrix."
+print(factorvars)
+textable = xtable(factorvars[c(1:4,6:9,12,17)],
+                           digits=c(0, 0, 0, 0, 0, 0, 0, 0,0,0,0),
+				  caption="Summary of the number of evaluations necessary to find an optimal solution for each experiment",
+				  label="table:r0runs")
+print(textable, include.rownames=FALSE, file = "summaryr1runs.tex")
+cat(separator)
+
 
 for(i in 1:length(splitres)){
   prob = toString(splitres[[i]]$Problem[1])
   print(prob)
-  kr = kruskal.test(splitres[[i]]$Evaluations ,splitres[[i]]$kosher)
+  kr = kruskal.test(splitres[[i]]$Evaluations~splitres[[i]]$Op+splitres[[i]]$Rates+splitres[[i]]$OpLength)
   print(kr)
+  #wb <- aggregate(splitres[[i]]$Evaluations,
+             #   by = list(o = splitres[[i]]$Rates,
+              #            r = splitres[[i]]$OpLength),
+               # FUN = mean)
+  #print(wb)
+  #ft <- friedman.test(x ~ o | r, data = wb)
+  #ft <- friedman.test(Evaluations ~ facts|Op, data = splitres[[i]])
+  #print(ft)
   cat(separator)
-  
   pw_kr = pairwise.wilcox.test(splitres[[i]]$Evaluations, splitres[[i]]$kosher,
     alternative='less',p.adj='bonferroni')
   pwtable <- melt(pw_kr[['p.value']])
-  #print(pw_kr)
+  print(pw_kr)
   pw_kr2 = pairwise.wilcox.test(splitres[[i]]$Evaluations, splitres[[i]]$kosher,
     alternative='greater',p.adj='bonferroni')
   pwtable2 <- melt(pw_kr2[['p.value']])
+  print(pw_kr2)
   #print(splitres[[i]]$kosher)
   n=length(unique(splitres[[i]]$kosher))
   pwtable$value2 <- pwtable2$value
@@ -221,7 +230,7 @@ compare = '--baseline' %in% args[]
 if(compare){  
 "COMPARE BASELINE
  Performs the statistical tests over the number of evaluations of the runs versus the baseline results."
-
+library(lawstat)
 wt <- data.frame(problem = character(0), rname = character(0), pvalue = numeric(0))
 for(i in 1:length(splitres)){
   prob = toString(splitres[[i]]$Problem[1])
@@ -231,10 +240,20 @@ for(i in 1:length(splitres)){
   for(i in 1:length(allsplit)){
     #print(toString(unique(allsplit[[i]]$kosher)))
     wres <- wilcox.test(allsplit[[i]]$Evaluations,rnd7F$Evaluations,alternative='less')
+    #data <- rbind(allsplit[[i]],rnd7F)
+    #wres <- levene.test(data$Evaluations, data$Op,kruskal.test=TRUE)
     #print(wres)
     #wattr <- attributes(wres)
     #print(wattr)
-    p.value <- wres$p.value
+    if(as.double(wres$p.value) <= 0.05/5){
+      #if(as.integer(median(allsplit[[i]]$Evaluations)) < as.integer(median(rnd7F$Evaluations)))
+        p.value = 'less'
+      #else
+       # p.value = 'greater'
+    }
+    else
+      p.value = 'not significant'
+    #p.value <- wres$p.value
     #print(prob)
     #print(unique(allsplit[[i]]$kosher))
     #print(p.value)
@@ -243,18 +262,20 @@ for(i in 1:length(splitres)){
     wt = rbind(wt, as.data.frame(cbind(prob,p.value,toString(unique(allsplit[[i]]$kosher))))) 
   }
 }
+print(wt)
 splitted <- strsplit(as.matrix(wt$V3),c('[.]'))
 splitm <- matrix(unlist(splitted), ncol=3, byrow=TRUE)
 
 wt2 <- data.frame(wt$prob,as.data.frame(splitm),as.matrix(wt$p.value),stringsAsFactors = FALSE)
 colnames(wt2) <- c('V1','V2','V3','V4','pvalue')
 #print(wt2)
-wt2$Result[wt2$pvalue < 0.05] <- 'less'#ifelse(wt$pvalue < 0.05,1,0)
-wt2$Result[wt2$pvalue >= 0.05] <- 'not significant'#
+#wt2$Result[wt2$pvalue < 0.05] <- 'less'#ifelse(wt$pvalue < 0.05,1,0)
+#wt2$Result[wt2$pvalue >= 0.05] <- 'not significant'#
+wt2$pvalue <- factor(wt2$pvalue, levels=c('greater','not significant','less'))
 print(wt2)
 ggplot(data=wt2, aes(x=V3,y=V4)) +
   facet_grid(V1~V2) +
-    geom_tile(aes(fill=Result))+
+    geom_tile(aes(fill=pvalue))+
     theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank()) +
     scale_fill_brewer(palette = 'PRGn',drop=FALSE) +
     theme(axis.text.x=element_text(angle=-90)) +
@@ -273,4 +294,5 @@ rnd7F <- fresults[fresults$Problem %in% genresults$Problem & fresults$Op == 'rnd
 print(rnd7F)
 }
 
+warnings()
 quit()

@@ -96,30 +96,38 @@ if(compare){
 "COMPARE
  Performs the statistical tests over the number of evaluations of the runs and plots the result in a graphical matrix."
 
+print(factorvars)
+textable = xtable(factorvars[c(1:3,5:8,11,16)],
+                           digits=c( 0, 0, 0, 0, 0, 0, 0,0,0,0),
+				  caption="Summary of the number of evaluations necessary to find an optimal solution for each experiment",
+				  label="table:r2runs")
+print(textable, include.rownames=FALSE, file = "summaryr2runs.tex")
+cat(separator)
+
 for(i in 1:length(splitres)){
   prob = toString(splitres[[i]]$Problem[1])
   print(prob)
   splitres[[i]] <- splitres[[i]][order(splitres[[i]]$kosher),]
-  kr = kruskal.test(splitres[[i]]$Evaluations ,splitres[[i]]$kosher)
+  kr = kruskal.test(splitres[[i]]$Evaluations ,splitres[[i]]$kosher,paired=FALSE)
   print(kr)
   cat(separator)
   
   pw_kr = pairwise.wilcox.test(splitres[[i]]$Evaluations, splitres[[i]]$kosher,
-    alternative='less',p.adj='bonferroni')
+    alternative='less',p.adj='bonferroni',paired=FALSE)
   pwtable <- melt(pw_kr[['p.value']])
   print(pw_kr)
   pw_kr2 = pairwise.wilcox.test(splitres[[i]]$Evaluations, splitres[[i]]$kosher,
-    alternative='greater',p.adj='bonferroni')
+    alternative='greater',p.adj='bonferroni',paired=FALSE)
   pwtable2 <- melt(pw_kr2[['p.value']])
   #print(splitres[[i]]$kosher)
   n=length(unique(splitres[[i]]$kosher))
   pwtable$value2 <- pwtable2$value
   pwtable$Difference[pwtable$value <= 0.05] <- 'less'
   pwtable$Difference[pwtable$value2 <= 0.05] <- 'greater'
-  pwtable$Difference[pwtable$value > 0.05 & pwtable$value2 > 0.05] <- 'indifferent'
+  pwtable$Difference[pwtable$value > 0.05 & pwtable$value2 > 0.05] <- 'not significant'
 
   pwtable$Var1 <- factor(pwtable$Var1, levels=sort(unique(fresults$kosher), decreasing=TRUE))
-  pwtable$Difference <- factor(pwtable$Difference, levels=c('greater','indifferent','less'))
+  pwtable$Difference <- factor(pwtable$Difference, levels=c('greater','not significant','less'))
   #pwtable$Var2 <- factor(pwtable$Var2, levels=sort(unique(factors), decreasing=FALSE))
   ggplot(data=pwtable, aes(x=Var2,y=Var1)) +
     geom_tile(aes(fill=Difference))+
@@ -194,10 +202,10 @@ for(i in 1:length(spresults)){
   pwtable$value2 <- pwtable2$value
   pwtable$Difference[pwtable$value < 0.05] <- 'less'
   pwtable$Difference[pwtable$value2 < 0.05] <- 'greater'
-  pwtable$Difference[pwtable$value > 0.05 & pwtable$value2 > 0.05] <- 'indifferent'
+  pwtable$Difference[pwtable$value > 0.05 & pwtable$value2 > 0.05] <- 'not significant'
 
   pwtable$Var1 <- factor(pwtable$Var1, levels=sort(unique(spresults[[i]]$kosher), decreasing=TRUE))
-  pwtable$Difference <- factor(pwtable$Difference, levels=c('greater','indifferent','less'))
+  pwtable$Difference <- factor(pwtable$Difference, levels=c('greater','not significant','less'))
   #print(pwtable)
   #dev.new()
   ggplot(data=pwtable, aes(x=Var2,y=Var1)) +
@@ -245,9 +253,9 @@ splitm <- data.frame(splitm[,1], V2=paste(splitm$V2,splitm$V3,sep='.'))
 wt2 <- data.frame(wt$prob,splitm,as.matrix(wt$p.value),stringsAsFactors = FALSE)
 colnames(wt2) <- c('V1','V2','V3','pvalue')
 #print(wt2)
-wt2$Result[wt2$pvalue < 0.05] <- 'less'#ifelse(wt$pvalue < 0.05,1,0)
-wt2$Result[wt2$pvalue >= 0.05] <- 'not significant'#
-wt2$Result <- factor(wt2$Result, levels=c('less','not significant'))
+wt2$Result[wt2$pvalue < 0.05/5] <- 'less'#ifelse(wt$pvalue < 0.05,1,0)
+wt2$Result[wt2$pvalue >= 0.05/5] <- 'not significant'#
+wt2$Result <- factor(wt2$Result, levels=c('greater','not significant','less'))
 print(wt2)
 ggplot(data=wt2, aes(x=V3,y=V2)) +
   facet_grid(~V1) +

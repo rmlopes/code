@@ -76,6 +76,18 @@ def evaluate(phenotype, test = False, nbits = 2, **kwargs):
         bestfit = testadder(phenotype, intinps)
         #if bestfit == -1:
          #       return 1e6
+        if bestfit == 0:
+                return 0
+        else:
+                numtf = float(phenotype.arnet.numtf) + 1.0
+                numeff = phenotype.arnet.numeff
+                if numeff > nbits*2:
+                        p = 1.0 - (nbits*2)/float(numeff)#.05 * abs(numeff-2)
+                else:
+                        p = 0
+
+                return bestfit + (.45 / float(numtf)) + (.45 * p)
+
         return bestfit
 
 if __name__ == '__main__':
