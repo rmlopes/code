@@ -43,9 +43,11 @@ def evaluate(phenotype, src, **kwargs):
 if __name__ == '__main__':
     #log.setLevel(logging.DEBUG)
     #random.seed(1234)
-    import pandas
-    bedata = pandas.read_excel('datafiles/ENB2012_data.xlsx')
-    enb= bedata.values
+    #import pandas
+    #bedata = pandas.read_excel('datafiles/ENB2012_data.xlsx')
+    #enb= bedata.values
+    import pickle
+    enb = pickle.load(open('datafiles/ENB2012_data.pkl'))
     random.shuffle(enb)
     thethird = int(.7*len(enb))
     traindata = enb[:thethird]
