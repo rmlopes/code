@@ -38,7 +38,7 @@ def evaluate(phenotype, src, **kwargs):
         out = phenotype(*inputs)
         error += abs(out[0]-outputs[0]) + abs(out[1]-outputs[1])
 
-    return error
+    return error / len(src)
 
 if __name__ == '__main__':
     #log.setLevel(logging.DEBUG)
