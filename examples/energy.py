@@ -5,6 +5,7 @@ from code.operators import *
 from code.rencode2 import *
 from code.rencode import ReNCoDeProb, evaluatecircuit, regressionfun
 from code.utils.mathlogic import *
+from code.utils.kfolds import *
 from code.extendedarn import bindparams, displayARNresults
 import logging
 
@@ -28,9 +29,12 @@ class EnergyProb(ReNCoDeProb):
                 self.nout = 2
                 self.ninp = 8
 
-def evaluate(phenotype, src, **kwargs):
+def evaluate(phenotype, test=False, **kwargs):
     y1error = 0.0
     y2error = 0.0
+    mainmod = __import__('__main__')
+    src = getattr(mainmod,TESTSET) if test else getattr(mainmod,TRAINSET)
+
 
     for r in src:
         inputs = r[:8]
@@ -47,26 +51,33 @@ def evaluate(phenotype, src, **kwargs):
 
 if __name__ == '__main__':
     #log.setLevel(logging.DEBUG)
-    random.seed(1225123451234)
+    #random.seed(1225123451234)
     #import pandas
     #bedata = pandas.read_excel('datafiles/ENB2012_data.xlsx')
     #enb= bedata.values
     import pickle
     enb = pickle.load(open('datafiles/ENB2012_data.pkl'))
-    random.shuffle(enb)
-    thethird = int(.7*len(enb))
-    traindata = enb[:thethird]
-    testdata = enb[thethird:]
-
-    evalf = partial(evaluate, src =  traindata)
-    #mapfun = getoutputp0p1)
+    #random.shuffle(enb)
+    #thethird = int(.7*len(enb))
+    #traindata = enb[:thethird]
+    #testdata = enb[thethird:]
+    evalf = partial(evaluate)
     cfg = loadconfig(parsecmd())
     p = EnergyProb(evalf)
     edw = EvoDevoWorkbench(cfg,p)
-    #p.eval_ = bindparams(edw.arnconfig, p.eval_)
-    edw.run(terminate = (lambda x,y: x < 1e-6 or y <= 0))
-    genv = evaluate(edw.best.phenotype,testdata)
-    edw.runlog.validatelog.critical(genv)    
+
+    genvalues = []
+    folds = createfolds(enb)
+    for i in range(len(folds)):
+        setcurrent(i, folds)
+        edw.run(terminate = (lambda x,y: x < 1e-6 or y <= 0))
+        gr = evaluate(edw.best.phenotype,test=True)
+        genvalues.append((gr,edw.best.phenotype.parcialfit))
+
+    edw.runlog.validatelog.critical(genvalues)
+    for r in  genvalues:
+        print r
+
     #pr.disable()
     #s = StringIO.StringIO()
     #sortby = 'cumulative'

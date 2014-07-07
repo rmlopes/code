@@ -3,6 +3,7 @@ from code.evodevo import *
 from code.operators import *
 from math import *
 from code.utils.mathlogic import *
+from code.utils.kfolds import *
 from code.rencode2 import *
 from code.rencode import evaluatecircuit, ReNCoDeProb, regressionfun
 from random import sample
@@ -51,46 +52,12 @@ def evaluate(phenotype, test = False, relax = False):
         return confusion
     return 1 - sum(partials)/5.0
 
-def confusion_f1(confusion):
-    totalf1 = tuple()
-    for i in range(confusion.shape[0]):
-        p = confusion_precision(confusion,i)
-        r = confusion_recall(confusion,i)
-        totalf1 += (2*p*r/(p+r),)
-    return totalf1
-
-def confusion_precision(confusion, target):
-    '''target is 0 indexed'''
-    numclasses = confusion.shape[0]
-    tp = confusion[target][target]
-    e = sum([c for c,i in zip(confusion[:,target],range(numclasses))
-             if i != target])
-    return tp/float(tp+e)
-
-
-def confusion_recall(confusion, target):
-    '''target is 0 indexed'''
-    numclasses = confusion.shape[0]
-    tp = confusion[target][target]
-    e = sum([c for c,i in zip(confusion[target,:],range(numclasses))
-             if i != target])
-    return tp/float(tp+e)
 
 globalconfusion = nparray([[0]*numclasses
                            for i in range(numclasses)])
 
 def runfold(i, datasets, edw, globalconfusion):
-    print "Running fold %i"%i
-    mainmod = __import__('__main__')
-    testset = []
-    trainset = []
-    for j in range(len(datasets)):
-        if j != i:
-            trainset.extend(datasets[j])
-        if j == i:
-            testset.extend(datasets[j])
-    setattr(mainmod,'trainset',trainset)
-    setattr(mainmod,'testset',testset)
+    setcurrent(i, datasets)
     edw.run()
     confusion = evaluate(edw.best.phenotype, True)
     globalconfusion += confusion
@@ -107,21 +74,6 @@ class CProb(ReNCoDeProb):
                            for i in range(1,numinputs)])
         self.funs.extend(self.extrafuns)
         self.arity.update(zip(self.extrafuns,[0]*len(self.extrafuns)))
-
-def createfolds(data, numfolds = 3):
-    #zipped1 = map(lambda x: (1,x[1],(x[0],x[2])) if x[0] == target else (0,x[1],(x[0],x[2])),
-     #             data)
-    #cset = filter(lambda x: x[0] == target, zipped1)
-    #otherset = filter(lambda x: x[0] != target, zipped1)
-    #workset = cset + random.sample(otherset, len(cset))
-    random.shuffle(data)
-    foldsize = int(len(data)/numfolds)
-    folds = []
-    for i in range(numfolds-1):
-        start = i*foldsize
-        folds.append(data[start:start+foldsize])
-    folds.append(data[(numfolds-1)*foldsize:])
-    return folds
 
 if __name__ == '__main__':
     import sys
