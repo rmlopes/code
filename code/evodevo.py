@@ -83,6 +83,32 @@ def register_adf(adfcount,adf,problem):
         problem.terms = problem.terms +[name]
         log.debug('Registered %s', name)
 
+def greedyselection(pop, size):
+        pop.sort(key=lambda a: a.fitness)
+        del pop[size:]
+
+def _sumranks(agent):
+        agent.ranksum = sum(agent.ranks)#/float(len(agent.ranks))
+
+
+def moo0selection(pop, size):
+        pop.sort(key=lambda a: a.phenotype.parcialfit[0])
+        #min_y1 = min([a.phenotype.parcialfit[0] for a in pop])
+        #min_y2 = min([a.phenotype.parcialfit[1] for a in pop])
+        for i in range(len(pop)):
+                pop[i].ranks = [i]
+        #for a in pop:
+         #       a.ranks = (abs(min_y1-a.phenotype.parcialfit[0]),
+          #                 abs(min_y2-a.phenotype.parcialfit[1]))
+        pop.sort(key=lambda a: a.phenotype.parcialfit[1])
+        for i in range(len(pop)):
+                pop[i].ranks.append(i)
+        map(_sumranks, pop)
+        pop.sort(key=lambda a: a.ranksum)
+        del pop[size:]
+        log.info(pop[0].phenotype.parcialfit)
+        
+
 ### Main class of the library
 class EvoDevoWorkbench:
         def __init__(self, loadedconfig, problem, logmanager = DefaultRunLog,
@@ -158,6 +184,14 @@ class EvoDevoWorkbench:
                 self.best = None
                 self.itercount = None
 
+                self._selectionop = config.get('default','selectionop')
+                if self._selectionop:
+                        log.info('Initializing selection operator...')
+                        self._selectionop = getattr(mainmod, self._selectionop)
+                else:
+                        self._selectionop = greedyselection
+                        
+
         def step(self):
                 log.info('Evaluating population...')
                 if not self.interactive:
@@ -185,8 +219,7 @@ class EvoDevoWorkbench:
                 #there is a bug in functools.partial in Py2.6
                 #cannot use deepcopy with partial'ed objects
                 self.parents.extend(self.population[:])
-                self.parents.sort(key=lambda a: a.fitness)
-                del self.parents[self.parentpsize:]
+                self._selectionop(self.parents, self.parentpsize)
                 log.info('Generating next population...')
 
                 offsprings = []
