@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 class EnergyProb(ReNCoDeProb):
         #extrafuns = ['exp_','min_','max_','log_','tanh_','sin_','cos_','sinh_','cosh_','tan_']
-        funs = ['add_','mul_','sqrt_','cos_','reciprocalsum','log_']
+        funs = ['add_','mul_','div_', 'sub_']#'sqrt_','cos_','reciprocalsum','log_']
         terms = ['inputs[0]']#,'tanh_','sin_','cos_','sinh_','cosh_','tan_']
         arity={}
         labels={}
@@ -29,20 +29,25 @@ class EnergyProb(ReNCoDeProb):
                 self.ninp = 8
 
 def evaluate(phenotype, src, **kwargs):
-    error = 0.0
-
+    y1error = 0.0
+    y2error = 0.0
 
     for r in src:
         inputs = r[:8]
         outputs = r[8:]
         out = phenotype(*inputs)
-        error += abs(out[0]-outputs[0]) + abs(out[1]-outputs[1])
+        #error += abs(out[0]-outputs[0]) + abs(out[1]-outputs[1])
+        
+        y1error += abs(out[0]-outputs[0])
+        y2error += abs(out[1]-outputs[1])
 
-    return error / len(src)
+        
+    phenotype.parcialfit = (y1error/len(src),y2error/len(src))
+    return sum(phenotype.parcialfit)
 
 if __name__ == '__main__':
     #log.setLevel(logging.DEBUG)
-    #random.seed(1234)
+    random.seed(1225123451234)
     #import pandas
     #bedata = pandas.read_excel('datafiles/ENB2012_data.xlsx')
     #enb= bedata.values
