@@ -1,7 +1,7 @@
 from bitstring import BitArray
 import random
 import numpy
-from math import floor
+from math import floor,ceil
 from bitarray import *
 
 def dm_event(code, mutation_rate):
@@ -47,7 +47,7 @@ def applymajority__(code, chunk_size):
     return bits
 
 def applymajority(code, chunk_size):
-    lim = code.length() // (chunk_size * 2)
+    lim = ceil(code.length() / float(chunk_size * 2))
     l = ['1' if code[i::chunk_size].count()>=lim else '0' for i in xrange(chunk_size)]
     return ''.join(l)
 
