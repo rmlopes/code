@@ -38,22 +38,51 @@ def bindparams(config,fun):
                    simstep = config.getint('default','simstep'),
                    silentmode = config.getboolean('default','silentmode'),
                    initdm = config.getint('default','initdm'),
-                   mutratedm = config.getfloat('default','mutratedm'))
+                   mutratedm = config.getfloat('default','mutratedm'),
+                   overlapgenes = config.getboolean('default','overlapgenes'))
 
-def generatechromo(initdm, mutratedm, genesize,
-                   promoter, excite_offset, **bindargs):
+def neutralshare(arnet):
+    try:
+        proms = arnet.promlist + arnet.effectorproms
+    except:
+        proms = arnet.promlist
+
+    neutrals = proms[0] - 88
+    for i in range(0, len(proms),2):
+        if proms[i] == proms[-1]:
+            break
+        if proms[i] + 168 < proms[i+1] - 88:
+            neutrals += (proms[i+1] - 88) - (proms[i] + 168)
+    neutrals += len(arnet.code) - (proms[-1]+168)
+    return float(neutrals) / len(arnet.code)
+
+def generatechromo(initdm, mutratedm, genesize, promoter,
+                   excite_offset, overlapgenes,**bindargs):
     '''
     Default function to generate an ARN chromosome.
     To be used with bindparams.
     '''
+    log.debug('Creating DM agent.')
     valid = False
-    while not 30 > valid >= 4:
-        genome = BitStream(float=random.random(),length=32);
+    while True:
+        genome = bitarray(getrndstr(32))
         for i in range(0,initdm):
             genome = dm_event(genome, mutratedm)
-        promlist = buildpromlist(genome, excite_offset, genesize, promoter)
-        valid = len(promlist)
+        if genome.search(bitarray(promoter)):
+            break
+    return genome
 
+def generatechromo_rnd( genomesize, mutratedm, genesize, promoter,
+                        excite_offset, overlapgenes, **bindargs):
+    '''
+    Default function to generate an ARN chromosome.
+    To be used with bindparams.
+    '''
+    log.debug('Creating random agent.')
+    valid = False
+    genome = bitarray(getrndstr(genomesize))
+    while not genome.search(bitarray(promoter)):
+        genome = bitarray(getrndstr(genomesize))
     return genome
 
 def displayARNresults(proteins, ccs, step=1):
@@ -62,21 +91,29 @@ def displayARNresults(proteins, ccs, step=1):
     plt.clf()
     xx=[i*step for i in range(len(ccs[0]))]
     for i in range(len(proteins)):
-        plt.plot(xx, ccs[i],label=str(proteins[i][0]))
+        plt.plot(xx, ccs[i],label="%i"%(proteins[i][0],))
+
+    plt.legend()
     plt.savefig('ccoutput.png')
     call(["open", "ccoutput.png"])
+    return "ARN simulation displayed"
 
-def buildpromlist(genome, excite_offset, genesize, promoter,**kwargs):
-    gene_index = genome.findall(BitStream(bin=promoter))
+def buildpromlist(genome, excite_offset, genesize, promoter,
+                  overlapgenes, **kwargs):
+    gene_index = genome.search(bitarray(promoter))
     promsize = len(promoter)
     promlist = filter( lambda index:
-                       int(excite_offset) <= index <  (genome.length-(int(genesize)+promsize )),
+                       int(excite_offset) <= index <  (genome.length()-(int(genesize)+promsize )),
                        gene_index)
+    genegap = 32 + genesize + 64
+    if overlapgenes:
+            #promotor size only
+            genegap = 32
     proms = reduce(lambda indxlst, indx:
-                   indxlst + [indx] if(indx-indxlst[-1] >= 32) else indxlst,
-                   promlist,
-                   [0])
-    return proms[1:]
+                   indxlst + [indx] if indx-indxlst[-1] >= genegap else indxlst,
+                   promlist[1:],
+                   promlist[:1])
+    return proms
 
 def buildproducts(genome, promlist, excite_offset, promoter,
                   genesize, bindingsize, proteinsize, **kwargs):
@@ -87,7 +124,7 @@ def buildproducts(genome, promlist, excite_offset, promoter,
      proteins = list()
      for pidx in promlist:
          proteins.append(_getprotein(pidx,
-                                     genome[pidx-excite_offset:pidx+genesize+len(promoter)],
+                                     bitarray(genome[pidx-excite_offset:pidx+genesize+len(promoter)]),
                                      bindingsize,
                                      genesize,
                                      proteinsize))
@@ -100,25 +137,22 @@ def getbindings(bindtype, proteins, match_threshold,**kwargs):
                          for otherps in proteins]
                         for p in proteins],dtype=float);
 
-def iterate(proteins, ccs, excite_weights, inhibit_weights,
-            samplerate, simtime, silentmode, simstep,delta,**kwargs):
-    time = 0
-    cchistory=nparray(ccs)
-    while time < simtime:
-        _update(proteins,ccs,excite_weights,inhibit_weights,delta)
+def iterate(arnet,samplerate, simtime, silentmode, simstep,delta,**kwargs):
+    time = 1
+    while time <= simtime:
+        _update(arnet.proteins,arnet.ccs,arnet.eweights,
+                arnet.iweights,delta)
         if(not(silentmode) and
            (time % (simtime*samplerate) == 0)):
             log.debug('TIME: '+ str(time))
             for p in proteins:
-                cchistory = np.column_stack((cchistory,ccs))
+                arnet.updatehistory()
         time+=simstep
 
     if not silentmode:
         displayARNresults(proteins, cchistory,simstep)
 
-    return ccs
-    #for i in range(len(proteins)):
-        #proteins[i].append(ccs[i])
+    return arnet.ccs
 
 
 def _update(proteins, ccs, exciteweights, inhibitweights,delta):
@@ -141,9 +175,8 @@ def _getSignalArray(ccs, weightstable):
     return 1.0/len(ccs) * np.dot(ccs,weightstable)
 
 def _getprotein(idx, code, bind_size, gene_size, protein_size):
-    signature = BitStream(bin=
-                        applymajority(code[bind_size*3:bind_size*3+gene_size],
-                                      protein_size))
+    signature = bitarray(applymajority(code[bind_size*3:bind_size*3+gene_size],
+                              protein_size))
     #EXTENDED version - Weak linkage (needs double size gene/proteins)
     #p = [code[:self.bind_size],
      #       code[self.bind_size:self.bind_size*2],
@@ -165,7 +198,7 @@ def _getweights(bindings, bindingsize, beta, **kwargs):
 
 
 class ARNetwork:
-    def __init__(self, gcode, config):
+    def __init__(self, gcode, config, **kwargs):
         self.code = gcode
         self.simtime = config.getint('default','simtime')
 
@@ -173,32 +206,78 @@ class ARNetwork:
         productsfun = bindparams(config, buildproducts)
         self.promlist = promfun(gcode)
         self.proteins = productsfun( gcode, self.promlist)
-
+        self.excite_offset = config.getint('default','excite_offset')
         pbindfun = bindparams(config, getbindings)
         weightsfun = bindparams(config, _getweights)
         nump = len(self.proteins)
+        self.ccs = []
         if self.promlist:
-            self.ebindings = pbindfun(0,self.proteins)
-            self.ibindings = pbindfun(1,self.proteins)
-            self.eweights = weightsfun(self.ebindings)
-            self.iweights = weightsfun(self.ibindings)
             self.ccs=nparray([1.0/nump]*nump)
+            for i in range(len(self.proteins)):
+                self.proteins[i].append(self.ccs[i])
+            self._initializehistory()
+            self._initializebindings(pbindfun)
+            self._initializeweights(weightsfun)
         self.simfun = bindparams(config,iterate)
         self.delta = config.getfloat('default','delta')
+        self.numtf = len(self.proteins)
+
+    def _initializebindings(self, pbindfun):
+        self.ebindings = pbindfun(0, self.proteins)
+        self.ibindings = pbindfun(1, self.proteins)
+
+    def _initializeweights(self, weightsfun):
+        self.eweights = weightsfun(self.ebindings)
+        self.iweights = weightsfun(self.ibindings)
+
+    def _initializehistory(self):
+        self.cchistory=nparray(self.ccs)
+
+    def updatehistory(self):
+        self.cchistory = np.column_stack((self.cchistory,
+                                          self.ccs))
 
     def __str__(self):
         return str(self.proteins)
 
     def simulate(self):
         if self.simtime > 0:
-            self.ccs = self.simfun(self.proteins, self.ccs,
-                              self.eweights, self.iweights)
+            self.simfun(self)
             for i in range(len(self.proteins)):
-                self.proteins[i].append(self.ccs[i])
+                self.proteins[i][-1] = self.ccs[i]
 
     def stepsimulate(self, proteins, ccs):
          _updatenonorm(proteins, ccs, self.eweights, self.iweights, self.delta)
          return ccs
+
+    def nstepsim(self, n = 1000):
+        self.simfun(self.proteins, self.ccs,
+                    self.eweights, self.iweights,simtime=n)
+        for i in range(len(self.proteins)):
+            self.proteins[i][-1] = self.ccs[i]
+
+    def getneutralshare(self):
+        return neutralshare(self)
+
+    def snapshot(self):
+        s = 'digraph best {\nordering = out;\n'
+        shape = 'hexagon'
+        labelidx = 0
+
+        for tf in self.promlist:
+            s += '%i [label="%s"];\n' % (tf, labelidx )
+            for e,h,i in zip(self.ebindings[:,labelidx],
+                             self.ibindings[:,labelidx],
+                             range(len(self.ebindings))):
+                if e > 0:
+                    s += '%i -> %i [dir=back];\n' % \
+                             (tf, self.promlist[i])
+                if h > 0:
+                    s += '%i -> %i [dir=back,style=dotted];\n' % \
+                             (tf, self.promlist[i])
+            labelidx += 1
+        s += '}'
+        return s
 
 ###########################################################################
 ### Test                                                                ###
@@ -216,14 +295,14 @@ if __name__ == '__main__':
                 genome = BitStream(bin=f.readline())
                 arnet = ARNetwork(genome, cfg)
         except:
-                while nump < 3:
+                while nump < 4 or nump > 12:
                         genome = BitStream(float=random.random(), length=32)
                         for i in range(cfg.getint('default','initdm')):
                                 genome = dm_event(genome,
                                                   .02)
 
-                                arnet = ARNetwork(genome, cfg)
-                                nump = len(arnet.promlist)
+                        arnet = ARNetwork(genome, cfg)
+                        nump = len(arnet.promlist)
 
         for p in arnet.proteins: print p
         f = open('genome.save','w')
@@ -260,7 +339,7 @@ def generatechromoepi(init_dm, dm_mutrate,**bindargs):
     return (genome,dict(zip(promlist,proteins)),
             dict(zip(promlist,cromatines)),10000,0)
 
-
+#deprecated
 def buildpromlistEPI(genome, excite_offset, genesize, promoter):
     gene_index = genome.findall(promoter)
     promsize = len(promoter)
@@ -272,35 +351,3 @@ def buildpromlistEPI(genome, excite_offset, genesize, promoter):
                    promlist,
                    [0])
     return proms[1:]
-
-#individual is (genome,proteindict,[epigenome])
-#deprecated
-def simulate(individual, bindingsize, proteinsize, genesize, promoter,
-             excite_offset, match_threshold, beta, delta,
-             samplerate, simtime, simstep, silentmode):
-    #genome,proteins,epig,lf,inactive = individual
-    #MODIFIED
-    #promlist = epig.keys()#buildpromlist(genome, excite_offset,genesize,promoter)
-    promlist = individual[1].keys()
-    proteins = individual[1].values()
-    threshold = match_threshold
-
-    if promlist and simtime > 0:
-            excite_weights = getweights(0, proteins, threshold,
-                                        bindingsize, beta)
-            inhibit_weights = getweights(1, proteins, threshold,
-                                         bindingsize, beta)
-            initccs = [1.0/len(proteins)]*len(proteins)
-            ccs=nparray(initccs)
-            iterate(proteins, ccs, excite_weights, inhibit_weights,
-                    samplerate,simtime, silentmode,simstep, delta)
-
-    return proteins
-
-#organized in columns for the target equation
-#deprecated
-def getweights(bindtype, proteins, threshold, bindsize,beta):
-    bindings = getbindings(bindtype, proteins, threshold, bindsize)
-    bindings -= bindsize
-    bindings *= beta
-    return np.exp(bindings)

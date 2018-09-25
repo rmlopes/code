@@ -2,3 +2,7 @@ results/*
 *.pyc
 *~
 *#*
+*.save
+*.png
+*.e*.*
+*.o*.*

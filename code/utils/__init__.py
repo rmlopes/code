@@ -1,1 +1,1 @@
-__all__ = ["mathlogic", "bitstrutils"]
+__all__ = ["filestuff", "mathlogic", "bitstrutils"]
